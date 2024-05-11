@@ -1,0 +1,6 @@
+﻿services:
+  googlesheetsapi:
+    image: googlesheetsapi
+    build:
+      context: .
+      dockerfile: GoogleSheetsAPI/Dockerfile
