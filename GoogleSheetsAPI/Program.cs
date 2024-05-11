@@ -1,5 +1,19 @@
-var builder = WebApplication.CreateBuilder(args);
+using Google.Apis.Auth.OAuth2;
+using Google.Apis.Services;
+using Google.Apis.Sheets.v4;
 
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddSingleton(s =>
+{
+    GoogleCredential credential = GoogleCredential.FromFile("ellsworth.json")
+        .CreateScoped(SheetsService.Scope.Spreadsheets);
+
+    return new SheetsService(new BaseClientService.Initializer()
+    {
+        HttpClientInitializer = credential,
+        ApplicationName = "Google Sheets Minimal API",
+    });
+});
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
