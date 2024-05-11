@@ -1,13 +1,19 @@
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
+using GoogleSheetsAPI.Data;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddDbContext<AppDbContext>(opt =>
+{
+    opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+});
+
 builder.Services.AddSingleton(s =>
 {
-    GoogleCredential credential = GoogleCredential.FromFile("ellsworth.json")
-        .CreateScoped(SheetsService.Scope.Spreadsheets);
-
+    var credential = GoogleCredential.FromFile("ellsworth.json").CreateScoped(SheetsService.Scope.Spreadsheets);
     return new SheetsService(new BaseClientService.Initializer()
     {
         HttpClientInitializer = credential,
@@ -52,7 +58,7 @@ app.MapGet("/weatherforecast", () =>
 
 app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
+internal record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 {
     public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
 }
