@@ -2,6 +2,7 @@ using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
 using GoogleSheetsAPI.Data;
+using GoogleSheetsAPI.Middleware;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -33,6 +34,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+// app.UseMiddleware<ApiKeyMiddleware>();
 
 // app.UseHttpsRedirection();
 
@@ -55,6 +57,23 @@ app.MapGet("/weatherforecast", () =>
     })
     .WithName("GetWeatherForecast")
     .WithOpenApi();
+
+// Define endpoints here.
+app.MapPost("/write", (SheetsService sheetsService) =>
+{
+    string spreadsheetId = "<your-spreadsheet-id>";
+    string range = "Sheet1!A1:D1";
+    var valueRange = new Google.Apis.Sheets.v4.Data.ValueRange()
+    {
+        Values = new List<IList<object>> { new List<object> { "Data1", "Data2", "Data3", "Data4" } }
+    };
+
+    var request = sheetsService.Spreadsheets.Values.Update(valueRange, spreadsheetId, range);
+    request.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
+    var response = request.Execute();
+    return Results.Ok(response.UpdatedRange);
+}).WithName("WriteData").WithOpenApi();
+
 
 app.Run();
 
