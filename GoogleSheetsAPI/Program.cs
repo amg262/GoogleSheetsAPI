@@ -16,7 +16,12 @@ builder.Services.AddSingleton(s =>
 {
     var env = s.GetRequiredService<IWebHostEnvironment>();
     var credentialPath = Path.Combine(env.WebRootPath, "ellsworth.json");
-    var credential = GoogleCredential.FromFile(credentialPath).CreateScoped(SheetsService.Scope.Spreadsheets);
+    GoogleCredential credential = GoogleCredential.FromFile(credentialPath)
+        .CreateScoped(SheetsService.Scope.Spreadsheets)
+        .CreateScoped(
+            "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/spreadsheets ")
+        .CreateWithUser("agunn@ellsworth.com");
+
     return new SheetsService(new BaseClientService.Initializer()
     {
         HttpClientInitializer = credential,
