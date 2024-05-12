@@ -14,7 +14,9 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
 
 builder.Services.AddSingleton(s =>
 {
-    var credential = GoogleCredential.FromFile("ellsworth.json").CreateScoped(SheetsService.Scope.Spreadsheets);
+    var env = s.GetRequiredService<IWebHostEnvironment>();
+    var credentialPath = Path.Combine(env.WebRootPath, "ellsworth.json");
+    var credential = GoogleCredential.FromFile(credentialPath).CreateScoped(SheetsService.Scope.Spreadsheets);
     return new SheetsService(new BaseClientService.Initializer()
     {
         HttpClientInitializer = credential,
@@ -61,7 +63,7 @@ app.MapGet("/weatherforecast", () =>
 // Define endpoints here.
 app.MapPost("/write", (SheetsService sheetsService) =>
 {
-    string spreadsheetId = "<your-spreadsheet-id>";
+    string spreadsheetId = "1IETU7EI1UKkVGgaCcoz0R0cnX5tdme-6ealsXvtXR1k";
     string range = "Sheet1!A1:D1";
     var valueRange = new Google.Apis.Sheets.v4.Data.ValueRange()
     {
