@@ -1,6 +1,6 @@
-@GoogleSheetsAPI_HostAddress = http://localhost:5238
+@GoogleSheetsAPI_HostAddress = http://localhost:8001
 
-GET {{GoogleSheetsAPI_HostAddress}}/weatherforecast/
+GET {{GoogleSheetsAPI_HostAddress}}/write/
 Accept: application/json
 
 ###
