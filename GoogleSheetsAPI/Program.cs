@@ -15,12 +15,9 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
 builder.Services.AddSingleton(s =>
 {
     var env = s.GetRequiredService<IWebHostEnvironment>();
-    var credentialPath = Path.Combine(env.WebRootPath, "ellsworth.json");
-    GoogleCredential credential = GoogleCredential.FromFile(credentialPath)
-        .CreateScoped(SheetsService.Scope.Spreadsheets)
-        .CreateScoped(
-            "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/spreadsheets ")
-        .CreateWithUser("agunn@ellsworth.com");
+    var path = Path.Combine(env.WebRootPath, "ellsworth.json");
+    var credential = GoogleCredential.FromFile(path)
+        .CreateScoped(SheetsService.Scope.Spreadsheets);
 
     return new SheetsService(new BaseClientService.Initializer()
     {
@@ -41,29 +38,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-// app.UseMiddleware<ApiKeyMiddleware>();
+
+app.UseMiddleware<ApiKeyMiddleware>();
 
 // app.UseHttpsRedirection();
-
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-    {
-        var forecast = Enumerable.Range(1, 5).Select(index =>
-                new WeatherForecast
-                (
-                    DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                    Random.Shared.Next(-20, 55),
-                    summaries[Random.Shared.Next(summaries.Length)]
-                ))
-            .ToArray();
-        return forecast;
-    })
-    .WithName("GetWeatherForecast")
-    .WithOpenApi();
 
 // Define endpoints here.
 app.MapPost("/write", (SheetsService sheetsService) =>
@@ -72,7 +50,8 @@ app.MapPost("/write", (SheetsService sheetsService) =>
     string range = "Sheet1!A1:D1";
     var valueRange = new Google.Apis.Sheets.v4.Data.ValueRange()
     {
-        Values = new List<IList<object>> { new List<object> { "Data1", "Data2", "Data3", "Data4" } }
+        Values = new List<IList<object>>
+            { new List<object> { "Hi Max", "I did this with an API", "Test", "Test again" } }
     };
 
     var request = sheetsService.Spreadsheets.Values.Update(valueRange, spreadsheetId, range);
@@ -81,10 +60,19 @@ app.MapPost("/write", (SheetsService sheetsService) =>
     return Results.Ok(response.UpdatedRange);
 }).WithName("WriteData").WithOpenApi();
 
+app.MapGet("/read", (SheetsService sheetsService) =>
+{
+    string spreadsheetId = "1IETU7EI1UKkVGgaCcoz0R0cnX5tdme-6ealsXvtXR1k";
+    string range = "Sheet1!A1:D1";
+    var b = ApiKeyGenerator.GenerateSecureApiKey();
+
+    Console.WriteLine(b);
+    var request = sheetsService.Spreadsheets.Values.Get(spreadsheetId, range);
+    var response = request.Execute();
+    return Results.Ok(response.Values);
+}).WithName("ReadData").WithOpenApi();
+
+
+
 
 app.Run();
-
-internal record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
