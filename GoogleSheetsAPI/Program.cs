@@ -51,7 +51,7 @@ app.MapPost("/write", (SheetsService sheetsService) =>
     var valueRange = new Google.Apis.Sheets.v4.Data.ValueRange()
     {
         Values = new List<IList<object>>
-            { new List<object> { "Hi Max", "I did this with an API", "Test", "Test again" } }
+            { new List<object> { "Ground Contorl", "to major tom", "Oh hello", "Test again" } }
     };
 
     var request = sheetsService.Spreadsheets.Values.Update(valueRange, spreadsheetId, range);
@@ -64,13 +64,12 @@ app.MapGet("/read", (SheetsService sheetsService) =>
 {
     string spreadsheetId = "1IETU7EI1UKkVGgaCcoz0R0cnX5tdme-6ealsXvtXR1k";
     string range = "Sheet1!A1:D1";
-    var b = ApiKeyGenerator.GenerateSecureApiKey();
-
-    Console.WriteLine(b);
     var request = sheetsService.Spreadsheets.Values.Get(spreadsheetId, range);
     var response = request.Execute();
     return Results.Ok(response.Values);
 }).WithName("ReadData").WithOpenApi();
+
+
 
 
 
