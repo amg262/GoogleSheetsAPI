@@ -51,14 +51,10 @@ app.MapPost("/write",
     {
         // string spreadsheetId2 = "1IETU7EI1UKkVGgaCcoz0R0cnX5tdme-6ealsXvtXR1k";
         // string range2 = "Sheet1!A1:D1";
-        var fullRange = $"{dto.Sheetname ?? "Sheet1"}!{dto.Range ?? "A1:Z1"}";
+        var fullRange = $"{dto.Sheetname ?? "Sheet1"}!{dto.Range ?? "A1"}";
 
-        var list = new List<object>();
-        foreach (var value in dto.Values)
-        {
-            list.Add(value);
-        }
-        
+        var list = dto.Values.Cast<object>().ToList();
+
         var valueRange = new Google.Apis.Sheets.v4.Data.ValueRange()
         {
             Values = new List<IList<object>> { list }
