@@ -2,7 +2,9 @@ using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
 using GoogleSheetsAPI.Data;
+using GoogleSheetsAPI.DTOs;
 using GoogleSheetsAPI.Middleware;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -45,27 +47,26 @@ app.UseMiddleware<ApiKeyMiddleware>();
 
 // Define endpoints here.
 app.MapPost("/write",
-    async (SheetsService sheetsService, string? spreadsheetId, string? sheetname, string? range,
-        List<IList<object>?>? values) =>
+    async (SheetsService sheetsService, [FromBody] WriteRequestDto dto) =>
     {
         // string spreadsheetId2 = "1IETU7EI1UKkVGgaCcoz0R0cnX5tdme-6ealsXvtXR1k";
         // string range2 = "Sheet1!A1:D1";
-        var fullRange = $"{sheetname ?? "Sheet1"}!{range ?? "A1:Z1"}";
+        var fullRange = $"{dto.Sheetname ?? "Sheet1"}!{dto.Range ?? "A1:Z1"}";
 
+        var list = new List<object>();
+        foreach (var value in dto.Values)
+        {
+            list.Add(value);
+        }
+        
         var valueRange = new Google.Apis.Sheets.v4.Data.ValueRange()
         {
-            Values = values ?? [new List<object> { "Ground Contorl", "to major tom", "Oh hello", "Test again" }]
+            Values = new List<IList<object>> { list }
         };
-
-
-        // var valueRange = new Google.Apis.Sheets.v4.Data.ValueRange()
-        // {
-        //     Values = new List<IList<object>>
-        //         { new List<object> { "Ground Contorl", "to major tom", "Oh hello", "Test again" } }
-        // };
+        
 
         var request = sheetsService.Spreadsheets.Values.Update(valueRange,
-            spreadsheetId ?? "1IETU7EI1UKkVGgaCcoz0R0cnX5tdme-6ealsXvtXR1k", fullRange);
+            dto.SpreadsheetId ?? "1IETU7EI1UKkVGgaCcoz0R0cnX5tdme-6ealsXvtXR1k", fullRange);
 
         request.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
         var response = await request.ExecuteAsync();
