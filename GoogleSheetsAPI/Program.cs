@@ -5,6 +5,7 @@ using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
 using GoogleSheetsAPI.Data;
 using GoogleSheetsAPI.DTOs;
+using GoogleSheetsAPI.Helpers;
 using GoogleSheetsAPI.Middleware;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
@@ -32,8 +33,38 @@ builder.Services.AddSingleton(s =>
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 builder.Services.AddHealthChecks();
+
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("ApiKey", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Description = "API Key needed to access the endpoints. `x-api-key: YOUR_API_KEY`",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Name = "x-api-key",
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+        Scheme = "ApiKeyScheme"
+    });
+
+    options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "ApiKey"
+                },
+                Scheme = "ApiKeyScheme",
+                Name = "x-api-key",
+                In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+            },
+            new List<string>()
+        }
+    });
+});
+
 
 builder.Services.AddCors(options =>
 {
@@ -43,9 +74,7 @@ builder.Services.AddCors(options =>
             corsPolicyBuilder
                 .AllowAnyMethod()
                 .AllowAnyHeader()
-                .AllowAnyOrigin()
-                .WithOrigins("https://localhost")
-                .AllowCredentials();
+                .AllowAnyOrigin();
         });
 });
 
@@ -57,6 +86,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseHttpsRedirection();
+app.UseMiddleware<ApiKeyMiddleware>();
+app.UseCors("Local");
 
 app.MapHealthChecks("/api/health/ready", new HealthCheckOptions
 {
@@ -89,16 +122,11 @@ app.MapHealthChecks("/api/health/live", new HealthCheckOptions
     Predicate = _ => false,
 });
 
-app.UseMiddleware<ApiKeyMiddleware>();
-app.UseCors("Local");
-
-// app.UseHttpsRedirection();
-
 // Define endpoints here.
 app.MapPost("api/write", async (SheetsService sheetsService, [FromBody] WriteRequestDto dto) =>
 {
     var fullRange = $"{dto.Sheetname ?? "Sheet1"}!{dto.Range ?? "A1"}";
-    var objList = dto.Values.Select(GetObjectValue).ToList();
+    var objList = dto.Values.Select(ApiHelper.GetObjectValue).ToList();
 
     var valueRange = new Google.Apis.Sheets.v4.Data.ValueRange() { Values = new List<IList<object>> { objList } };
     var request = sheetsService.Spreadsheets.Values.Update(valueRange, dto.SpreadsheetId, fullRange);
@@ -110,7 +138,7 @@ app.MapPost("api/write", async (SheetsService sheetsService, [FromBody] WriteReq
 
 app.MapGet("api/read", async (SheetsService sheetsService, [FromBody] ReadRequestDto dto) =>
 {
-    var fullRange = $"{dto.Sheetname ?? "Sheet1"}!{dto.Range ?? "A1"}";
+    var fullRange = $"{dto.Sheetname ?? "Sheet1"}!{dto.Range ?? "A1:Z15"}";
     var request = sheetsService.Spreadsheets.Values.Get(dto.SpreadsheetId, fullRange);
 
     var response = await request.ExecuteAsync();
@@ -120,7 +148,7 @@ app.MapGet("api/read", async (SheetsService sheetsService, [FromBody] ReadReques
 app.MapPut("api/update", async (SheetsService sheetsService, [FromBody] WriteRequestDto dto) =>
 {
     var fullRange = $"{dto.Sheetname ?? "Sheet1"}!{dto.Range ?? "A1:Z1"}";
-    var objList = dto.Values.Select(GetObjectValue).ToList();
+    var objList = dto.Values.Select(ApiHelper.GetObjectValue).ToList();
 
     var valueRange = new Google.Apis.Sheets.v4.Data.ValueRange() { Values = new List<IList<object>> { objList } };
     var request = sheetsService.Spreadsheets.Values.Update(valueRange, dto.SpreadsheetId, fullRange);
@@ -141,31 +169,3 @@ app.MapDelete("api/delete", async (SheetsService sheetsService, [FromBody] Write
 
 
 app.Run();
-return;
-
-static object GetObjectValue(object? obj)
-{
-    try
-    {
-        if (obj == null) return "NULL";
-
-        var typeOfObject = ((JsonElement)obj).ValueKind;
-
-        return typeOfObject switch
-        {
-            JsonValueKind.Number => float.Parse(obj.ToString()), // return long.Parse(obj.ToString());
-            JsonValueKind.String => obj.ToString(),
-            JsonValueKind.True => true,
-            JsonValueKind.False => false,
-            JsonValueKind.Null => null,
-            JsonValueKind.Undefined => null,
-            JsonValueKind.Object => obj.ToString(),
-            JsonValueKind.Array => obj.ToString(),
-            _ => obj.ToString()
-        };
-    }
-    catch (Exception ex)
-    {
-        return ex.Message;
-    }
-}

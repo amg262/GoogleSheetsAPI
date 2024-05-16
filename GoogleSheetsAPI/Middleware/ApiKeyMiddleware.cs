@@ -8,7 +8,6 @@ namespace GoogleSheetsAPI.Middleware;
 public class ApiKeyMiddleware
 {
     private readonly RequestDelegate _next;
-    private readonly IConfiguration _config;
     private const string ApikeyName = "x-api-key";
     private readonly string _apiKey;
     private readonly ILogger<ApiKeyMiddleware> _logger;
@@ -22,9 +21,8 @@ public class ApiKeyMiddleware
     public ApiKeyMiddleware(RequestDelegate next, IConfiguration config, ILogger<ApiKeyMiddleware> logger)
     {
         _next = next;
-        _config = config;
         _logger = logger;
-        _apiKey = _config.GetValue<string>("ApiKey") ?? string.Empty;
+        _apiKey = config.GetValue<string>("ApiKey") ?? string.Empty;
     }
 
     /// <summary>
