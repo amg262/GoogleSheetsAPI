@@ -18,8 +18,7 @@ builder.Services.AddSingleton(s =>
 {
     var env = s.GetRequiredService<IWebHostEnvironment>();
     var path = Path.Combine(env.WebRootPath, "ellsworth.json");
-    var credential = GoogleCredential.FromFile(path)
-        .CreateScoped(SheetsService.Scope.Spreadsheets);
+    var credential = GoogleCredential.FromFile(path).CreateScoped(SheetsService.Scope.Spreadsheets);
 
     return new SheetsService(new BaseClientService.Initializer()
     {
@@ -46,30 +45,24 @@ app.UseMiddleware<ApiKeyMiddleware>();
 // app.UseHttpsRedirection();
 
 // Define endpoints here.
-app.MapPost("/write",
-    async (SheetsService sheetsService, [FromBody] WriteRequestDto dto) =>
-    {
-        // string spreadsheetId2 = "1IETU7EI1UKkVGgaCcoz0R0cnX5tdme-6ealsXvtXR1k";
-        // string range2 = "Sheet1!A1:D1";
-        var fullRange = $"{dto.Sheetname ?? "Sheet1"}!{dto.Range ?? "A1"}";
+app.MapPost("/api/write", async (SheetsService sheetsService, [FromBody] WriteRequestDto dto) =>
+{
+    // string spreadsheetId2 = "1IETU7EI1UKkVGgaCcoz0R0cnX5tdme-6ealsXvtXR1k";
+    // string range2 = "Sheet1!A1:D1";
+    var fullRange = $"{dto.Sheetname ?? "Sheet1"}!{dto.Range ?? "A1"}";
 
-        var list = dto.Values.Cast<object>().ToList();
+    var list = dto.Values.Cast<object>().ToList();
 
-        var valueRange = new Google.Apis.Sheets.v4.Data.ValueRange()
-        {
-            Values = new List<IList<object>> { list }
-        };
-        
+    var valueRange = new Google.Apis.Sheets.v4.Data.ValueRange() { Values = new List<IList<object>> { list } };
+    
+    var request = sheetsService.Spreadsheets.Values.Update(valueRange, dto.SpreadsheetId, fullRange);
 
-        var request = sheetsService.Spreadsheets.Values.Update(valueRange,
-            dto.SpreadsheetId ?? "1IETU7EI1UKkVGgaCcoz0R0cnX5tdme-6ealsXvtXR1k", fullRange);
+    request.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
+    var response = await request.ExecuteAsync();
+    return Results.Ok(response.UpdatedRange);
+}).WithName("WriteData").WithOpenApi();
 
-        request.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
-        var response = await request.ExecuteAsync();
-        return Results.Ok(response.UpdatedRange);
-    }).WithName("WriteData").WithOpenApi();
-
-app.MapGet("/read", async (SheetsService sheetsService) =>
+app.MapGet("/api/read", async (SheetsService sheetsService) =>
 {
     string spreadsheetId = "1IETU7EI1UKkVGgaCcoz0R0cnX5tdme-6ealsXvtXR1k";
     string range = "Sheet1!A1:D1";

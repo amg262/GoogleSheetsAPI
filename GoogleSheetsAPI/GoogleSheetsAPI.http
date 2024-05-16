@@ -9,10 +9,10 @@ x-api-key: {{api-key}}
 
 {
     "spreadsheetId": "{{spreadsheet_id}}",
-    "range": "Sheet1!A1:C1",
-    "values": [
-        ["John", "Doe", "26"]
-    ]
+    "sheetname": "Sheet1",
+    "range": "C8",
+    "values": 
+        ["John", "Doe", 26]
+    
 }
-
 ###
