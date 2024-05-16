@@ -1,12 +1,14 @@
 using System.Net.Mime;
 using System.Text.Json;
 using Google.Apis.Auth.OAuth2;
+using Google.Apis.Docs.v1;
 using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
 using GoogleSheetsAPI.Data;
 using GoogleSheetsAPI.DTOs;
 using GoogleSheetsAPI.Helpers;
 using GoogleSheetsAPI.Middleware;
+using GoogleSheetsAPI.Models;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -22,16 +24,28 @@ builder.Services.AddSingleton(s =>
 {
     var env = s.GetRequiredService<IWebHostEnvironment>();
     var path = Path.Combine(env.WebRootPath, "ellsworth.json");
-    var credential = GoogleCredential.FromFile(path).CreateScoped(SheetsService.Scope.Spreadsheets);
+    var sheetCredential = GoogleCredential.FromFile(path).CreateScoped(SheetsService.Scope.Spreadsheets)
+        .CreateScoped("https://www.googleapis.com/auth/documents");
 
-    return new SheetsService(new BaseClientService.Initializer()
+    var docCredential = GoogleCredential.FromFile(path)
+        .CreateScoped("https://www.googleapis.com/auth/documents");
+
+    var docsService = new DocsService(new BaseClientService.Initializer()
     {
-        HttpClientInitializer = credential,
+        HttpClientInitializer = docCredential,
+        ApplicationName = "Google Docs API Project",
+    });
+
+    var sheetsService = new SheetsService(new BaseClientService.Initializer()
+    {
+        HttpClientInitializer = sheetCredential,
         ApplicationName = "Google Sheets Minimal API",
     });
+
+    return new GoogleServices(docsService, sheetsService);
 });
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHealthChecks();
 
@@ -158,13 +172,13 @@ app.MapHealthChecks("/api/health/live", new HealthCheckOptions
     });
 
 // Define endpoints here.
-app.MapPost("api/write", async (SheetsService sheetsService, [FromBody] WriteRequestDto dto) =>
+app.MapPost("api/write", async (GoogleServices googleServices, [FromBody] WriteRequestDto dto) =>
     {
         var fullRange = $"{dto.Sheetname ?? "Sheet1"}!{dto.Range ?? "A1"}";
         var objList = dto.Values.Select(ApiHelper.GetObjectValue).ToList();
 
         var valueRange = new Google.Apis.Sheets.v4.Data.ValueRange() { Values = new List<IList<object>> { objList } };
-        var request = sheetsService.Spreadsheets.Values.Update(valueRange, dto.SpreadsheetId, fullRange);
+        var request = googleServices.SheetsService.Spreadsheets.Values.Update(valueRange, dto.SpreadsheetId, fullRange);
 
         request.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
         var response = await request.ExecuteAsync();
@@ -216,10 +230,10 @@ app.MapPost("api/write", async (SheetsService sheetsService, [FromBody] WriteReq
         return operation;
     });
 
-app.MapGet("api/read", async (SheetsService sheetsService, [FromBody] ReadRequestDto dto) =>
+app.MapGet("api/read", async (GoogleServices googleServices, [FromBody] ReadRequestDto dto) =>
     {
         var fullRange = $"{dto.Sheetname ?? "Sheet1"}!{dto.Range ?? "A1:Z15"}";
-        var request = sheetsService.Spreadsheets.Values.Get(dto.SpreadsheetId, fullRange);
+        var request = googleServices.SheetsService.Spreadsheets.Values.Get(dto.SpreadsheetId, fullRange);
 
         var response = await request.ExecuteAsync();
         return Results.Ok(response.Values);
@@ -276,13 +290,13 @@ app.MapGet("api/read", async (SheetsService sheetsService, [FromBody] ReadReques
         return operation;
     });
 
-app.MapPut("api/update", async (SheetsService sheetsService, [FromBody] WriteRequestDto dto) =>
+app.MapPut("api/update", async (GoogleServices googleServices, [FromBody] WriteRequestDto dto) =>
     {
         var fullRange = $"{dto.Sheetname ?? "Sheet1"}!{dto.Range ?? "A1:Z1"}";
         var objList = dto.Values.Select(ApiHelper.GetObjectValue).ToList();
 
         var valueRange = new Google.Apis.Sheets.v4.Data.ValueRange() { Values = new List<IList<object>> { objList } };
-        var request = sheetsService.Spreadsheets.Values.Update(valueRange, dto.SpreadsheetId, fullRange);
+        var request = googleServices.SheetsService.Spreadsheets.Values.Update(valueRange, dto.SpreadsheetId, fullRange);
 
         request.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
         var response = await request.ExecuteAsync();
@@ -341,10 +355,10 @@ app.MapPut("api/update", async (SheetsService sheetsService, [FromBody] WriteReq
         return operation;
     });
 
-app.MapDelete("api/delete", async (SheetsService sheetsService, [FromBody] WriteRequestDto dto) =>
+app.MapDelete("api/delete", async (GoogleServices googleServices, [FromBody] WriteRequestDto dto) =>
     {
         var fullRange = $"{dto.Sheetname ?? "Sheet1"}!{dto.Range ?? "A1:Z1"}";
-        var request = sheetsService.Spreadsheets.Values.Clear(null, dto.SpreadsheetId, fullRange);
+        var request = googleServices.SheetsService.Spreadsheets.Values.Clear(null, dto.SpreadsheetId, fullRange);
 
         var response = await request.ExecuteAsync();
         return Results.Ok(response.ClearedRange);
@@ -400,5 +414,6 @@ app.MapDelete("api/delete", async (SheetsService sheetsService, [FromBody] Write
         };
         return operation;
     });
+
 
 app.Run();
