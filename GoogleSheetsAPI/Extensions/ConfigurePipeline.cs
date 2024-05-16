@@ -1,7 +1,9 @@
-﻿using System.Text.Json;
+﻿using System.Net.Mime;
+using System.Text.Json;
 using Google.Apis.Sheets.v4;
 using GoogleSheetsAPI.DTOs;
 using GoogleSheetsAPI.Middleware;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GoogleSheetsAPI.Extensions;
@@ -15,7 +17,7 @@ public static class ConfigurePipeline
     /// Configures the application's endpoints and middleware.
     /// </summary>
     /// <param name="app">The WebApplication instance to configure.</param>
-    public static void UseProjectEndpoints(this WebApplication app)
+    public static async void UseProjectEndpoints(this WebApplication app)
     {
         // Enable Swagger UI in the development environment.
         if (app.Environment.IsDevelopment())
@@ -28,6 +30,43 @@ public static class ConfigurePipeline
         app.UseMiddleware<ApiKeyMiddleware>();
         app.UseHttpsRedirection(); // Uncomment if HTTPS redirection is needed
 
+        // This checks if the db is ready to accept requests and gives a response
+        app.MapHealthChecks("/api/health/ready", new HealthCheckOptions
+        {
+            Predicate = check => check.Tags.Contains("ready"),
+            ResponseWriter = async (context, report) =>
+            {
+                var result = JsonSerializer.Serialize(
+                    new
+                    {
+                        status = report.Status.ToString(),
+                        checks = report.Entries.Select(entry => new
+                        {
+                            name = entry.Key,
+                            status = entry.Value.Status.ToString(),
+                            exception = entry.Value.Exception != null ? entry.Value.Exception.Message : "none",
+                            duration = entry.Value.Duration.ToString()
+                        })
+                    }
+                );
+
+                context.Response.ContentType = MediaTypeNames.Application.Json;
+                await context.Response.WriteAsync(result);
+            }
+        });
+
+        // This checks if API is live
+        app.MapHealthChecks("/api/health/live", new HealthCheckOptions
+        {
+            Predicate = _ => false,
+        });
+
+        
+        await ConfigureApi(app);
+    }
+
+    private static async Task ConfigureApi(WebApplication app)
+    {
         // Define endpoints here.
         app.MapPost("/api/write", async (SheetsService sheetsService, [FromBody] WriteRequestDto dto) =>
         {

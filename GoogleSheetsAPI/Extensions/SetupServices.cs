@@ -3,6 +3,7 @@ using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
 using GoogleSheetsAPI.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 
 namespace GoogleSheetsAPI.Extensions;
 
@@ -37,6 +38,23 @@ public static class SetupServices
         });
 
         builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
+        builder.Services.AddSwaggerGen(c =>
+        {
+            c.SwaggerDoc("v1", new OpenApiInfo { Title = "Google Sheets API", Version = "v1" });
+        });
+
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy(name: "Local",
+                corsPolicyBuilder =>
+                {
+                    corsPolicyBuilder
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowAnyOrigin()
+                        .WithOrigins("https://localhost")
+                        .AllowCredentials();
+                });
+        });
     }
 }
