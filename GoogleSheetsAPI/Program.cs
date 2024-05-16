@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
@@ -51,13 +52,13 @@ app.MapPost("/api/write", async (SheetsService sheetsService, [FromBody] WriteRe
     // string range2 = "Sheet1!A1:D1";
     var fullRange = $"{dto.Sheetname ?? "Sheet1"}!{dto.Range ?? "A1"}";
 
-    var list = dto.Values.Cast<object>().ToList();
+    var objList = dto.Values.Select(GetObjectValue).ToList();
 
-    var valueRange = new Google.Apis.Sheets.v4.Data.ValueRange() { Values = new List<IList<object>> { list } };
-    
+    var valueRange = new Google.Apis.Sheets.v4.Data.ValueRange() { Values = new List<IList<object>> { objList } };
+
     var request = sheetsService.Spreadsheets.Values.Update(valueRange, dto.SpreadsheetId, fullRange);
 
-    request.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
+    request.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
     var response = await request.ExecuteAsync();
     return Results.Ok(response.UpdatedRange);
 }).WithName("WriteData").WithOpenApi();
@@ -73,3 +74,24 @@ app.MapGet("/api/read", async (SheetsService sheetsService) =>
 
 
 app.Run();
+return;
+
+static object GetObjectValue(object? obj)
+{
+    if (obj == null) return "null";
+
+    var typeOfObject = ((JsonElement)obj).ValueKind;
+
+    return typeOfObject switch
+    {
+        JsonValueKind.Number => float.Parse(obj.ToString()), // return long.Parse(obj.ToString());
+        JsonValueKind.String => obj.ToString(),
+        JsonValueKind.True => true,
+        JsonValueKind.False => false,
+        JsonValueKind.Null => null,
+        JsonValueKind.Undefined => null,
+        JsonValueKind.Object => obj.ToString(),
+        JsonValueKind.Array => obj.ToString(),
+        _ => obj.ToString()
+    };
+}
