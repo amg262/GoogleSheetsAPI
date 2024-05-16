@@ -2,6 +2,7 @@ using System.Net.Mime;
 using System.Text.Json;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Docs.v1;
+using Google.Apis.Drive.v3;
 using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
 using GoogleSheetsAPI.Data;
@@ -22,19 +23,12 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
 
 builder.Services.AddSingleton(s =>
 {
+    const string json = "ellsworth.json";
     var env = s.GetRequiredService<IWebHostEnvironment>();
-    var path = Path.Combine(env.WebRootPath, "ellsworth.json");
-    var sheetCredential = GoogleCredential.FromFile(path).CreateScoped(SheetsService.Scope.Spreadsheets)
-        .CreateScoped("https://www.googleapis.com/auth/documents");
-
-    var docCredential = GoogleCredential.FromFile(path)
-        .CreateScoped("https://www.googleapis.com/auth/documents");
-
-    var docsService = new DocsService(new BaseClientService.Initializer()
-    {
-        HttpClientInitializer = docCredential,
-        ApplicationName = "Google Docs API Project",
-    });
+    var path = Path.Combine(env.WebRootPath, json);
+    var sheetCredential = GoogleCredential.FromFile(path).CreateScoped(SheetsService.Scope.Spreadsheets);
+    var docCredential = GoogleCredential.FromFile(path).CreateScoped(DocsService.Scope.Documents);
+    var driveCredential = GoogleCredential.FromFile(path).CreateScoped(DriveService.Scope.Drive);
 
     var sheetsService = new SheetsService(new BaseClientService.Initializer()
     {
@@ -42,7 +36,19 @@ builder.Services.AddSingleton(s =>
         ApplicationName = "Google Sheets Minimal API",
     });
 
-    return new GoogleServices(docsService, sheetsService);
+    var docsService = new DocsService(new BaseClientService.Initializer()
+    {
+        HttpClientInitializer = docCredential,
+        ApplicationName = "Google Docs Minimal API",
+    });
+
+    var driveService = new DriveService(new BaseClientService.Initializer()
+    {
+        HttpClientInitializer = driveCredential,
+        ApplicationName = "Google Drive Minimal API",
+    });
+
+    return new GoogleServices(sheetsService, docsService, driveService);
 });
 
 
