@@ -63,6 +63,7 @@ app.MapHealthChecks("/api/health/ready", new HealthCheckOptions
     Predicate = check => check.Tags.Contains("ready"),
     ResponseWriter = async (context, report) =>
     {
+        // context.Request.Headers.Append("x-api-key", builder.Configuration.GetValue<string>("ApiKey"));
         var result = JsonSerializer.Serialize(
             new
             {
@@ -72,7 +73,7 @@ app.MapHealthChecks("/api/health/ready", new HealthCheckOptions
                     name = entry.Key,
                     status = entry.Value.Status.ToString(),
                     exception = entry.Value.Exception != null ? entry.Value.Exception.Message : "none",
-                    duration = entry.Value.Duration.ToString()
+                    duration = entry.Value.Duration.ToString(),
                 })
             }
         );
@@ -107,7 +108,7 @@ app.MapPost("api/write", async (SheetsService sheetsService, [FromBody] WriteReq
     return Results.Ok(response.UpdatedRange);
 }).WithName("WriteData").WithOpenApi();
 
-app.MapGet("api/read", async (SheetsService sheetsService, [FromBody] WriteRequestDto dto) =>
+app.MapGet("api/read", async (SheetsService sheetsService, [FromBody] ReadRequestDto dto) =>
 {
     var fullRange = $"{dto.Sheetname ?? "Sheet1"}!{dto.Range ?? "A1"}";
     var request = sheetsService.Spreadsheets.Values.Get(dto.SpreadsheetId, fullRange);
