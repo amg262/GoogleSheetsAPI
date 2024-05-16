@@ -100,7 +100,7 @@ if (app.Environment.IsDevelopment())
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "Google Sheets API v1");
         options.DocumentTitle = "Google Sheets API Documentation";
         options.DisplayRequestDuration();
-        options.EnableFilter();
+        // options.EnableFilter();
     });
 }
 

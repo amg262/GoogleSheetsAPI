@@ -1,18 +1,39 @@
-@GoogleSheetsAPI_HostAddress = http://localhost:8001
+@GoogleSheetsAPI_HostAddress = https://localhost:8001
 @api-key = cJTUF8BhrNw7p1FnTAGMnFLSKhi0zqZeYuRlR4zwzqZ35peWyMU6jMB2Bo5p4J/Yfvnx7HkRsveTJZ+NcXVSaQ==
 @spreadsheet_id = 1IETU7EI1UKkVGgaCcoz0R0cnX5tdme-6ealsXvtXR1k
 
-POST {{GoogleSheetsAPI_HostAddress}}/write
+POST {{GoogleSheetsAPI_HostAddress}}/api/write
 Content-Type: application/json
 Accept: application/json
 x-api-key: {{api-key}}
 
 {
-    "spreadsheetId": "{{spreadsheet_id}}",
-    "sheetname": "Sheet1",
-    "range": "C8",
-    "values": 
-        ["John", "Doe", 26]
-    
+  "spreadsheetId": "1IETU7EI1UKkVGgaCcoz0R0cnX5tdme-6ealsXvtXR1k",
+  "sheetname": "Sheet1",
+  "range": "A12",
+  "values": [
+    "afsdfsdfsffs",
+    "bahh bahh",
+    "Oh",
+    "again",
+    "oh hello there",
+    "yo",
+    "123",
+    true,
+    false,
+    null,
+    12.3434,
+    341.23,
+    "2024-05-16T00:00:00Z"
+  ]
 }
 ###
+GET {{GoogleSheetsAPI_HostAddress}}/api/read
+Content-Type: application/json
+Accept: application/json
+x-api-key: {{api-key}}
+
+{
+  "sheetname": "Sheet1",
+  "range": "A1:Z14"
+}
