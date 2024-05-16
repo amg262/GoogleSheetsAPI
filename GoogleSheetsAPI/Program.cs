@@ -421,5 +421,69 @@ app.MapDelete("api/delete", async (GoogleServices googleServices, [FromBody] Wri
         return operation;
     });
 
+app.MapPatch("api/patch", async (GoogleServices googleServices, [FromBody] WriteRequestDto dto) =>
+    {
+        var fullRange = $"{dto.Sheetname ?? "Sheet1"}!{dto.Range ?? "A1:Z1"}";
+        var objList = dto.Values.Select(ApiHelper.GetObjectValue).ToList();
+
+        var valueRange = new Google.Apis.Sheets.v4.Data.ValueRange() { Values = new List<IList<object>> { objList } };
+        var request = googleServices.SheetsService.Spreadsheets.Values.Append(valueRange, dto.SpreadsheetId, fullRange);
+
+        request.ValueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.USERENTERED;
+        var response = await request.ExecuteAsync();
+        return Results.Ok(response.Updates.UpdatedRange);
+    }).WithName("PatchData")
+    .WithTags("Google Sheets")
+    .WithOpenApi(operation =>
+    {
+        operation.Responses.TryAdd("200", new Microsoft.OpenApi.Models.OpenApiResponse
+        {
+            Description = "Successful Operation"
+        });
+        operation.Responses.TryAdd("401", new Microsoft.OpenApi.Models.OpenApiResponse
+        {
+            Description = "Unauthorized"
+        });
+        operation.Responses.TryAdd("500", new Microsoft.OpenApi.Models.OpenApiResponse
+        {
+            Description = "Internal Server Error"
+        });
+        operation.Description = "Patch Data in Google Sheets based on request body.";
+        operation.Summary = "Patch Data in Google Sheets based on request body.";
+        operation.RequestBody = new Microsoft.OpenApi.Models.OpenApiRequestBody
+        {
+            Required = true,
+            Content =
+            {
+                ["application/json"] = new Microsoft.OpenApi.Models.OpenApiMediaType
+                {
+                    Schema = new Microsoft.OpenApi.Models.OpenApiSchema
+                    {
+                        Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                        {
+                            Type = Microsoft.OpenApi.Models.ReferenceType.Schema,
+                            Id = "WriteRequestDto"
+                        }
+                    }
+                }
+            }
+        };
+        operation.Security = new List<Microsoft.OpenApi.Models.OpenApiSecurityRequirement>
+        {
+            new()
+            {
+                [new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                {
+                    Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                    {
+                        Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                        Id = "ApiKey"
+                    }
+                }] = new List<string>()
+            }
+        };
+        return operation;
+    });
+
 
 app.Run();
