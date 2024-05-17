@@ -155,6 +155,7 @@ app.MapPatch("api/sheets/patch", async (GoogleServices googleServices, [FromBody
     .WithTags("Google Sheets")
     .AddOpenApiDefaults("Patch Data in Google Sheets based on request body.", "WriteRequestDto");
 
+
 app.MapPost("api/docs/create", async (GoogleServices googleServices) =>
     {
         var doc = new Document { Title = "New Document" };
@@ -164,6 +165,7 @@ app.MapPost("api/docs/create", async (GoogleServices googleServices) =>
     }).WithName("CreateDocument")
     .WithTags("Google Docs")
     .AddOpenApiDefaults("Create a new Google Doc.", "none");
+
 
 app.MapGet("api/docs/read/{documentId}", async (GoogleServices googleServices, string? documentId) =>
     {
@@ -176,6 +178,7 @@ app.MapGet("api/docs/read/{documentId}", async (GoogleServices googleServices, s
     .WithTags("Google Docs")
     .AddOpenApiDefaults("Read content from a Google Doc.", "none");
 
+
 app.MapPut("api/docs/update/{documentId}",
         async (GoogleServices googleServices, string documentId, [FromBody] List<Request> requests) =>
         {
@@ -186,6 +189,7 @@ app.MapPut("api/docs/update/{documentId}",
         }).WithName("UpdateDocument")
     .WithTags("Google Docs")
     .AddOpenApiDefaults("Update a Google Doc based on request body.", "List<Request>");
+
 
 app.MapPut("api/docs/replace/{documentId}", async (GoogleServices googleServices, string documentId) =>
     {
@@ -216,8 +220,9 @@ app.MapPut("api/docs/replace/{documentId}", async (GoogleServices googleServices
     .WithTags("Google Docs")
     .AddOpenApiDefaults("Delete (clear) content in a Google Doc.", "none");
 
+
 app.MapPost("api/docs/append/{documentId}",
-        async (GoogleServices googleServices, string documentId, [FromBody] AppendTextRequest appendTextRequest) =>
+        async (GoogleServices googleServices, string documentId, [FromBody] AppendTextRequestDto appendTextRequest) =>
         {
             if (string.IsNullOrEmpty(appendTextRequest.Text))
             {
@@ -262,10 +267,11 @@ app.MapPost("api/docs/append/{documentId}",
             }
         }).WithName("AppendTextToDocument")
     .WithTags("Google Docs")
-    .AddOpenApiDefaults("Append text to a Google Doc based on document ID and request body.", "AppendTextRequest");
+    .AddOpenApiDefaults("Append text to a Google Doc based on document ID and request body.", "AppendTextRequestDto");
+
 
 app.MapPatch("api/docs/update/{documentId}",
-        async (GoogleServices googleServices, string documentId, [FromBody] UpdateTextRequest updateRequest) =>
+        async (GoogleServices googleServices, string documentId, [FromBody] UpdateTextRequestDto updateRequest) =>
         {
             if (string.IsNullOrEmpty(updateRequest.Text))
             {
@@ -317,10 +323,11 @@ app.MapPatch("api/docs/update/{documentId}",
             }
         }).WithName("UpdateTextInDocument")
     .WithTags("Google Docs")
-    .AddOpenApiDefaults("Update text in a Google Doc based on document ID and request body.", "UpdateTextRequest");
+    .AddOpenApiDefaults("Update text in a Google Doc based on document ID and request body.", "UpdateTextRequestDto");
+
 
 app.MapDelete("api/docs/delete/{documentId}",
-        async (GoogleServices googleServices, string documentId, [FromBody] DeleteTextRequest deleteRequest) =>
+        async (GoogleServices googleServices, string documentId, [FromBody] DeleteTextRequestDto deleteRequest) =>
         {
             // Create the requests to delete text in the specified range.
             var requests = new List<Request>
@@ -356,13 +363,15 @@ app.MapDelete("api/docs/delete/{documentId}",
             }
         }).WithName("DeleteTextInDocument")
     .WithTags("Google Docs")
-    .AddOpenApiDefaults("Delete text in a Google Doc based on document ID and request body.", "DeleteTextRequest");
+    .AddOpenApiDefaults("Delete text in a Google Doc based on document ID and request body.", "DeleteTextRequestDto");
 
+// Console.WriteLine(DoIt());
 app.Run();
 return;
 
-static void DoIt()
+static string DoIt() => new PasswordGenerator().Generate(64, 10, 10);
+
+public partial class Program
 {
-    var pass = new PasswordGenerator();
-    var pw = pass.Generate(64, 10, 10);
+    
 }

@@ -5,7 +5,7 @@ namespace GoogleSheetsAPI.DTOs;
 /// <summary>
 /// Represents a request for updating text within a specified range in a Google Document.
 /// </summary>
-public record DeleteTextRequest
+public record UpdateTextRequestDto
 {
     /// <summary>
     /// Gets or sets the starting index of the text range to update.

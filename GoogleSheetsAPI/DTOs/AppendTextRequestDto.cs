@@ -2,7 +2,7 @@
 
 namespace GoogleSheetsAPI.DTOs;
 
-public record AppendTextRequest
+public record AppendTextRequestDto
 {
     [JsonPropertyName("text")] public string? Text { get; set; }
 }

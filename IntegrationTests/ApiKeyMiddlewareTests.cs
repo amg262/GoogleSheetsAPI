@@ -11,6 +11,8 @@ namespace IntegrationTests;
 /// <summary>
 /// Contains integration tests for the ApiKeyMiddleware class.
 /// </summary>
+[Collection("Shared collection")]
+
 public class ApiKeyMiddlewareTests
 {
     private readonly IConfiguration _configuration;

@@ -21,25 +21,27 @@ public static class ApiHelper
     /// It handles various JSON value kinds such as Number, String, True, False, Null, Undefined, Object, and Array.
     /// If the conversion fails, it catches the exception and returns the exception message.
     /// </remarks>
-    public static object GetObjectValue(object? obj)
+    public static object? GetObjectValue(object obj)
     {
         try
         {
             if (obj == null) return "NULL";
 
+            var jsonElement = (JsonElement)obj;
+            var rawText = jsonElement.GetRawText();
             var typeOfObject = ((JsonElement)obj).ValueKind;
 
             return typeOfObject switch
             {
-                JsonValueKind.Number => float.Parse(obj.ToString()), // return long.Parse(obj.ToString());
-                JsonValueKind.String => obj.ToString(),
+                JsonValueKind.Number => float.Parse(rawText), // return long.Parse(obj.ToString());
+                JsonValueKind.String => rawText.ToString(),
                 JsonValueKind.True => true,
                 JsonValueKind.False => false,
                 JsonValueKind.Null => null,
                 JsonValueKind.Undefined => null,
-                JsonValueKind.Object => obj.ToString(),
-                JsonValueKind.Array => obj.ToString(),
-                _ => obj.ToString()
+                JsonValueKind.Object => rawText.ToString(),
+                JsonValueKind.Array => rawText.ToString(),
+                _ => rawText.ToString()
             };
         }
         catch (Exception ex)
