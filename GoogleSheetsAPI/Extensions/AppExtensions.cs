@@ -5,8 +5,17 @@ using Microsoft.OpenApi.Models;
 
 namespace GoogleSheetsAPI.Extensions;
 
-public static class OpenApiExtensions
+/// <summary>
+/// Provides extension methods to enhance the application with Swagger and health checks.
+/// </summary>
+public static class AppExtensions
 {
+    /// <summary>
+    /// Adds Swagger generator and metadata configurations to the services collection.
+    /// This method sets up the Swagger UI for the API, including its security requirements for API Key authentication.
+    /// </summary>
+    /// <param name="services">The IServiceCollection to add services to.</param>
+    /// <returns>The IServiceCollection for chaining.</returns>
     public static IServiceCollection AddSwaggerMetadata(this IServiceCollection services)
     {
         services.AddHealthChecks();
@@ -61,6 +70,13 @@ public static class OpenApiExtensions
         return services;
     }
 
+    /// <summary>
+    /// Configures default responses and request body for OpenAPI documentation on route handlers.
+    /// </summary>
+    /// <param name="builder">The RouteHandlerBuilder to apply configurations to.</param>
+    /// <param name="description">The description for the operation.</param>
+    /// <param name="schemaId">The schema ID used for the request body.</param>
+    /// <returns>The configured RouteHandlerBuilder.</returns>
     public static RouteHandlerBuilder AddOpenApiDefaults(this RouteHandlerBuilder builder, string? description,
         string schemaId)
     {
@@ -106,7 +122,13 @@ public static class OpenApiExtensions
         });
     }
 
-    public static IEndpointConventionBuilder AddOpenApiHealthCheckDefaults(this IEndpointConventionBuilder builder,
+    /// <summary>
+    /// Adds default OpenAPI metadata to health check endpoints.
+    /// </summary>
+    /// <param name="builder">The IEndpointConventionBuilder to configure.</param>
+    /// <param name="description">The description of the health check endpoint.</param>
+    /// <returns>The configured IEndpointConventionBuilder.</returns>
+    private static IEndpointConventionBuilder AddOpenApiHealthCheckDefaults(this IEndpointConventionBuilder builder,
         string? description)
     {
         return builder.WithMetadata(new OpenApiOperation
@@ -120,8 +142,12 @@ public static class OpenApiExtensions
         });
     }
 
-    public static IEndpointRouteBuilder MapHealthCheckEndpoints(this IEndpointRouteBuilder endpoints,
-        IConfiguration configuration)
+    /// <summary>
+    /// Maps health check endpoints and configures them with OpenAPI metadata and responses.
+    /// </summary>
+    /// <param name="endpoints">The IEndpointRouteBuilder to add endpoints to.</param>
+    /// <returns>The configured IEndpointRouteBuilder.</returns>
+    public static IEndpointRouteBuilder MapHealthCheckEndpoints(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapHealthChecks("/api/health/ready", new HealthCheckOptions
             {

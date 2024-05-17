@@ -11,7 +11,6 @@ using GoogleSheetsAPI.Helpers;
 using GoogleSheetsAPI.Middleware;
 using GoogleSheetsAPI.Models;
 using GoogleSheetsAPI.Extensions;
-using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -80,48 +79,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseMiddleware<ApiKeyMiddleware>();
 app.UseCors("Local");
+app.MapHealthCheckEndpoints();
 
-
-app.MapHealthChecks("/api/health/ready", new HealthCheckOptions
-    {
-        Predicate = check => check.Tags.Contains("ready"),
-        ResponseWriter = async (context, report) =>
-        {
-            // context.Request.Headers.Append("x-api-key", builder.Configuration.GetValue<string>("ApiKey"));
-            var result = JsonSerializer.Serialize(
-                new
-                {
-                    full = report,
-                    
-                    status = report.Status.ToString(),
-                    checks = report.Entries.Select(entry => new
-                    {
-                        name = entry.Key,
-                        status = entry.Value.Status.ToString(),
-                        exception = entry.Value.Exception != null ? entry.Value.Exception.Message : "none",
-                        duration = entry.Value.Duration.ToString(),
-                    })
-                }
-            );
-
-            context.Response.ContentType = MediaTypeNames.Application.Json;
-            await context.Response.WriteAsync(result);
-        }
-    }).WithName("HealthReady")
-    .WithTags("Health Checks")
-    .AddOpenApiHealthCheckDefaults("SUMM Health check to indicate if the service is ready.");
-
-
-// .AddOpenApiHealthCheckDefaults("Health check to indicate if the service is ready.", "Health check to indicate if the service is ready to receive requests.");
-
-
-// This checks if API is live
-app.MapHealthChecks("/api/health/live", new HealthCheckOptions
-    {
-        Predicate = _ => false,
-    }).WithName("HealthLive")
-    .WithTags("Health Checks")
-    .AddOpenApiHealthCheckDefaults("Health check to indicate if the service is live and accepting requests.");
 // Define endpoints here.
 app.MapPost("api/write", async (GoogleServices googleServices, [FromBody] WriteRequestDto dto) =>
     {
