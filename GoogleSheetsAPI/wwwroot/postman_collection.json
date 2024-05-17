@@ -8,6 +8,194 @@
 	},
 	"item": [
 		{
+			"name": "Docker",
+			"item": [
+				{
+					"name": "Write",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "cJTUF8BhrNw7p1FnTAGMnFLSKhi0zqZeYuRlR4zwzqZ35peWyMU6jMB2Bo5p4J/Yfvnx7HkRsveTJZ+NcXVSaQ==",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								},
+								{
+									"key": "in",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"spreadsheetId\": \"1IETU7EI1UKkVGgaCcoz0R0cnX5tdme-6ealsXvtXR1k\",\r\n  \"sheetname\": \"Sheet1\",\r\n  \"range\": \"A12\",\r\n  \"values\": [ \r\n\t\"afsdfsdfsffs\", \r\n\t\"bahh bahh\", \r\n\t\"Oh\", \r\n\t\"again\", \r\n\t\"oh hello there\", \r\n\t\"yo\", \r\n\t\"123\",\r\n\ttrue,\r\n\tfalse,\r\n\tnull,\r\n\t12.3434, \r\n\t341.23,\r\n\t\"2024-05-16T00:00:00Z\"\r\n\t]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8001/api/write",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8001",
+							"path": [
+								"api",
+								"write"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Read",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "cJTUF8BhrNw7p1FnTAGMnFLSKhi0zqZeYuRlR4zwzqZ35peWyMU6jMB2Bo5p4J/Yfvnx7HkRsveTJZ+NcXVSaQ==",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								},
+								{
+									"key": "in",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n\t\"sheetname\": \"Sheet2\",\r\n\t\"range\": \"A1:Z14\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://localhost:8001/api/read",
+							"protocol": "https",
+							"host": [
+								"localhost"
+							],
+							"port": "8001",
+							"path": [
+								"api",
+								"read"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "HeathCheck - Live",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "cJTUF8BhrNw7p1FnTAGMnFLSKhi0zqZeYuRlR4zwzqZ35peWyMU6jMB2Bo5p4J/Yfvnx7HkRsveTJZ+NcXVSaQ==",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								},
+								{
+									"key": "in",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8001/api/health/live",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8001",
+							"path": [
+								"api",
+								"health",
+								"live"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "HeathCheck - Ready",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "cJTUF8BhrNw7p1FnTAGMnFLSKhi0zqZeYuRlR4zwzqZ35peWyMU6jMB2Bo5p4J/Yfvnx7HkRsveTJZ+NcXVSaQ==",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "x-api-key",
+									"type": "string"
+								},
+								{
+									"key": "in",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8001/api/health/ready",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8001",
+							"path": [
+								"api",
+								"health",
+								"ready"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "Write",
 			"request": {
 				"auth": {
@@ -86,7 +274,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n  \"sheetname\": \"Sheet1\",\r\n  \"range\": \"A12:Z12\"\r\n}",
+					"raw": "{\r\n\t\"sheetname\": \"Sheet2\",\r\n\t\"range\": \"A1:Z14\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -94,8 +282,8 @@
 					}
 				},
 				"url": {
-					"raw": "http://localhost:8001/api/read",
-					"protocol": "http",
+					"raw": "https://localhost:8001/api/read",
+					"protocol": "https",
 					"host": [
 						"localhost"
 					],
@@ -175,7 +363,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://localhost:8001/api/health/live",
+					"raw": "http://localhost:8001/api/health/ready",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -184,7 +372,7 @@
 					"path": [
 						"api",
 						"health",
-						"live"
+						"ready"
 					]
 				}
 			},
