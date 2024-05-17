@@ -6,8 +6,12 @@ EXPOSE 8080
 EXPOSE 8081
 
 COPY GoogleSheetsAPI/GoogleSheetsAPI.csproj GoogleSheetsAPI/GoogleSheetsAPI.csproj
+COPY IntegrationTests/IntegrationTests.csproj IntegrationTests/
+COPY UnitTests/UnitTests.csproj UnitTests/
 
 RUN dotnet restore GoogleSheetsAPI/GoogleSheetsAPI.csproj
+RUN dotnet restore IntegrationTests/IntegrationTests.csproj
+RUN dotnet restore UnitTests/UnitTests.csproj
 
 # Copy the app folders over
 COPY . .
