@@ -483,7 +483,7 @@
 			"response": []
 		},
 		{
-			"name": "Docs Delete",
+			"name": "Docs Replace",
 			"request": {
 				"auth": {
 					"type": "apikey",
@@ -505,7 +505,7 @@
 						}
 					]
 				},
-				"method": "DELETE",
+				"method": "PUT",
 				"header": [],
 				"body": {
 					"mode": "raw",
@@ -517,7 +517,7 @@
 					}
 				},
 				"url": {
-					"raw": "https://localhost:8001/api/docs/read/1VHFTsfc5hjwxX5JIzL96GbUR1ibfkegAQS8-fH1Onag",
+					"raw": "https://localhost:8001/api/docs/replace/1VHFTsfc5hjwxX5JIzL96GbUR1ibfkegAQS8-fH1Onag",
 					"protocol": "https",
 					"host": [
 						"localhost"
@@ -526,7 +526,7 @@
 					"path": [
 						"api",
 						"docs",
-						"read",
+						"replace",
 						"1VHFTsfc5hjwxX5JIzL96GbUR1ibfkegAQS8-fH1Onag"
 					]
 				}
@@ -629,6 +629,57 @@
 						"api",
 						"docs",
 						"update",
+						"1VHFTsfc5hjwxX5JIzL96GbUR1ibfkegAQS8-fH1Onag"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Docs Delete - DeleteContent",
+			"request": {
+				"auth": {
+					"type": "apikey",
+					"apikey": [
+						{
+							"key": "value",
+							"value": "cJTUF8BhrNw7p1FnTAGMnFLSKhi0zqZeYuRlR4zwzqZ35peWyMU6jMB2Bo5p4J/Yfvnx7HkRsveTJZ+NcXVSaQ==",
+							"type": "string"
+						},
+						{
+							"key": "key",
+							"value": "x-api-key",
+							"type": "string"
+						},
+						{
+							"key": "in",
+							"value": "header",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n\t\"startIndex\": 1,\r\n\t\"endIndex\": 1000\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://localhost:8001/api/docs/delete/1VHFTsfc5hjwxX5JIzL96GbUR1ibfkegAQS8-fH1Onag",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "8001",
+					"path": [
+						"api",
+						"docs",
+						"delete",
 						"1VHFTsfc5hjwxX5JIzL96GbUR1ibfkegAQS8-fH1Onag"
 					]
 				}

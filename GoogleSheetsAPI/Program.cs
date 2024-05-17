@@ -22,6 +22,7 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
     opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
 
+
 builder.Services.AddSingleton(s =>
 {
     const string json = "ellsworth.json";
@@ -186,8 +187,7 @@ app.MapPut("api/docs/update/{documentId}",
     .WithTags("Google Docs")
     .AddOpenApiDefaults("Update a Google Doc based on request body.", "List<Request>");
 
-
-app.MapDelete("api/docs/delete/{documentId}", async (GoogleServices googleServices, string documentId) =>
+app.MapPut("api/docs/replace/{documentId}", async (GoogleServices googleServices, string documentId) =>
     {
         // Here we clear the document by replacing the content with an empty string
         var requests = new List<Request>
@@ -198,19 +198,20 @@ app.MapDelete("api/docs/delete/{documentId}", async (GoogleServices googleServic
                 {
                     ContainsText = new SubstringMatchCriteria
                     {
-                        Text = "",
-                        MatchCase = true
+                        Text = "the",
+                        MatchCase = false
                     },
-                    ReplaceText = ""
+                    ReplaceText = "THEE"
                 }
             }
         };
         var batchRequest = new BatchUpdateDocumentRequest { Requests = requests };
         var request = googleServices.DocsService.Documents.BatchUpdate(batchRequest, documentId);
         var result = await request.ExecuteAsync();
-        var replies = result.Replies;
-        Console.WriteLine(JsonSerializer.Serialize(replies));
-        return Results.Ok(new { Result = "Document content cleared." });
+
+        return result.Replies == null
+            ? Results.BadRequest("Failed to clear document content.")
+            : Results.Ok(new { Result = "Document content cleared." });
     }).WithName("DeleteDocumentContent")
     .WithTags("Google Docs")
     .AddOpenApiDefaults("Delete (clear) content in a Google Doc.", "none");
@@ -318,5 +319,50 @@ app.MapPatch("api/docs/update/{documentId}",
     .WithTags("Google Docs")
     .AddOpenApiDefaults("Update text in a Google Doc based on document ID and request body.", "UpdateTextRequest");
 
+app.MapDelete("api/docs/delete/{documentId}",
+        async (GoogleServices googleServices, string documentId, [FromBody] DeleteTextRequest deleteRequest) =>
+        {
+            // Create the requests to delete text in the specified range.
+            var requests = new List<Request>
+            {
+                new()
+                {
+                    DeleteContentRange = new DeleteContentRangeRequest
+                    {
+                        Range = new Range()
+                        {
+                            StartIndex = deleteRequest.StartIndex,
+                            EndIndex = deleteRequest.EndIndex
+                        }
+                    }
+                }
+            };
+
+            var batchUpdateRequest = new BatchUpdateDocumentRequest { Requests = requests };
+            var request = googleServices.DocsService.Documents.BatchUpdate(batchUpdateRequest, documentId);
+            try
+            {
+                var response = await request.ExecuteAsync();
+                return Results.Ok(new
+                {
+                    Message = "Text deleted successfully.",
+                    DocumentId = documentId,
+                    Changes = response.Replies
+                });
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem("Failed to delete text: " + ex.Message);
+            }
+        }).WithName("DeleteTextInDocument")
+    .WithTags("Google Docs")
+    .AddOpenApiDefaults("Delete text in a Google Doc based on document ID and request body.", "DeleteTextRequest");
 
 app.Run();
+return;
+
+static void DoIt()
+{
+    var pass = new PasswordGenerator();
+    var pw = pass.Generate(64, 10, 10);
+}
