@@ -10,6 +10,7 @@ using GoogleSheetsAPI.DTOs;
 using GoogleSheetsAPI.Helpers;
 using GoogleSheetsAPI.Middleware;
 using GoogleSheetsAPI.Models;
+using GoogleSheetsAPI.Extensions;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -54,55 +55,7 @@ builder.Services.AddSingleton(s =>
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHealthChecks();
-
-builder.Services.AddSwaggerGen(options =>
-{
-    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
-    {
-        Title = "Google Sheets API",
-        Version = "v1",
-        Description = "This API allows server-to-server interactions with Google Sheets. It provides endpoints to " +
-                      "perform CRUD (Create, Read, Update, Delete) operations on Google Sheets. The API is designed " +
-                      "for automated, backend processes and requires an API key for authentication. All endpoints " +
-                      "require an API key to be passed in the request headers. " +
-                      "The API key should be included in the `x-api-key` header.",
-        Contact = new Microsoft.OpenApi.Models.OpenApiContact
-        {
-            Name = "Andrew",
-            Email = "agunn@ellsworth.com",
-            // Url = new Uri("https://ellsworth.com")
-        }
-    });
-
-    options.AddSecurityDefinition("ApiKey", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-    {
-        Description = "API Key needed to access the endpoints. `x-api-key: YOUR_API_KEY`",
-        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-        Name = "x-api-key",
-        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
-        Scheme = "ApiKeyScheme"
-    });
-
-    options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
-    {
-        {
-            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-            {
-                Reference = new Microsoft.OpenApi.Models.OpenApiReference
-                {
-                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                    Id = "ApiKey"
-                },
-                Scheme = "ApiKeyScheme",
-                Name = "x-api-key",
-                In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-            },
-            new List<string>()
-        }
-    });
-});
-
-
+builder.Services.AddSwaggerMetadata();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: "Local",
@@ -128,6 +81,7 @@ app.UseHttpsRedirection();
 app.UseMiddleware<ApiKeyMiddleware>();
 app.UseCors("Local");
 
+
 app.MapHealthChecks("/api/health/ready", new HealthCheckOptions
     {
         Predicate = check => check.Tags.Contains("ready"),
@@ -137,6 +91,8 @@ app.MapHealthChecks("/api/health/ready", new HealthCheckOptions
             var result = JsonSerializer.Serialize(
                 new
                 {
+                    full = report,
+                    
                     status = report.Status.ToString(),
                     checks = report.Entries.Select(entry => new
                     {
@@ -153,14 +109,11 @@ app.MapHealthChecks("/api/health/ready", new HealthCheckOptions
         }
     }).WithName("HealthReady")
     .WithTags("Health Checks")
-    .WithOpenApi(operation =>
-    {
-        operation.Responses.TryAdd("200", new Microsoft.OpenApi.Models.OpenApiResponse { Description = "Healthy" });
-        operation.Responses.TryAdd("503", new Microsoft.OpenApi.Models.OpenApiResponse { Description = "Unhealthy" });
-        operation.Summary = "Health check to indicate if the service is ready.";
-        operation.Description = "Health check to indicate if the service is ready to receive requests.";
-        return operation;
-    });
+    .AddOpenApiHealthCheckDefaults("SUMM Health check to indicate if the service is ready.");
+
+
+// .AddOpenApiHealthCheckDefaults("Health check to indicate if the service is ready.", "Health check to indicate if the service is ready to receive requests.");
+
 
 // This checks if API is live
 app.MapHealthChecks("/api/health/live", new HealthCheckOptions
@@ -168,15 +121,7 @@ app.MapHealthChecks("/api/health/live", new HealthCheckOptions
         Predicate = _ => false,
     }).WithName("HealthLive")
     .WithTags("Health Checks")
-    .WithOpenApi(operation =>
-    {
-        operation.Responses.TryAdd("200", new Microsoft.OpenApi.Models.OpenApiResponse { Description = "Healthy" });
-        operation.Responses.TryAdd("503", new Microsoft.OpenApi.Models.OpenApiResponse { Description = "Unhealthy" });
-        operation.Summary = "Health check to indicate if the service is live.";
-        operation.Description = "Health check to indicate if the service is live.";
-        return operation;
-    });
-
+    .AddOpenApiHealthCheckDefaults("Health check to indicate if the service is live and accepting requests.");
 // Define endpoints here.
 app.MapPost("api/write", async (GoogleServices googleServices, [FromBody] WriteRequestDto dto) =>
     {
@@ -191,50 +136,8 @@ app.MapPost("api/write", async (GoogleServices googleServices, [FromBody] WriteR
         return Results.Ok(response.UpdatedRange);
     }).WithName("WriteData")
     .WithTags("Google Sheets")
-    .WithOpenApi(operation =>
-    {
-        operation.Responses.TryAdd("200",
-            new Microsoft.OpenApi.Models.OpenApiResponse { Description = "Successful Operation" });
-        operation.Responses.TryAdd("401",
-            new Microsoft.OpenApi.Models.OpenApiResponse { Description = "Unauthorized" });
-        operation.Responses.TryAdd("500",
-            new Microsoft.OpenApi.Models.OpenApiResponse { Description = "Internal Server Error" });
-        operation.Description = "Write Data to Google Sheets based on request body.";
-        operation.Summary = "Write Data to Google Sheets based on request body.";
-        operation.RequestBody = new Microsoft.OpenApi.Models.OpenApiRequestBody
-        {
-            Required = true,
-            Content =
-            {
-                ["application/json"] = new Microsoft.OpenApi.Models.OpenApiMediaType
-                {
-                    Schema = new Microsoft.OpenApi.Models.OpenApiSchema
-                    {
-                        Reference = new Microsoft.OpenApi.Models.OpenApiReference
-                        {
-                            Type = Microsoft.OpenApi.Models.ReferenceType.Schema,
-                            Id = "WriteRequestDto"
-                        }
-                    }
-                }
-            }
-        };
-        operation.Security = new List<Microsoft.OpenApi.Models.OpenApiSecurityRequirement>
-        {
-            new()
-            {
-                [new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-                {
-                    Reference = new Microsoft.OpenApi.Models.OpenApiReference
-                    {
-                        Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                        Id = "ApiKey"
-                    }
-                }] = new List<string>()
-            }
-        };
-        return operation;
-    });
+    .AddOpenApiDefaults("Write Data to Google Sheets based on request body.", "WriteRequestDto");
+
 
 app.MapGet("api/read", async (GoogleServices googleServices, [FromBody] ReadRequestDto dto) =>
     {
@@ -245,56 +148,8 @@ app.MapGet("api/read", async (GoogleServices googleServices, [FromBody] ReadRequ
         return Results.Ok(response.Values);
     }).WithName("ReadData")
     .WithTags("Google Sheets")
-    .WithOpenApi(operation =>
-    {
-        operation.Responses.TryAdd("200", new Microsoft.OpenApi.Models.OpenApiResponse
-        {
-            Description = "Successful Operation"
-        });
-        operation.Responses.TryAdd("401", new Microsoft.OpenApi.Models.OpenApiResponse
-        {
-            Description = "Unauthorized"
-        });
-        operation.Responses.TryAdd("500", new Microsoft.OpenApi.Models.OpenApiResponse
-        {
-            Description = "Internal Server Error"
-        });
-        operation.Description = "Read Data from Google Sheets based on request body.";
-        operation.Summary = "Read Data from Google Sheets based on request body.";
-        operation.RequestBody = new Microsoft.OpenApi.Models.OpenApiRequestBody
-        {
-            Required = true,
-            Content =
-            {
-                ["application/json"] = new Microsoft.OpenApi.Models.OpenApiMediaType
-                {
-                    Schema = new Microsoft.OpenApi.Models.OpenApiSchema
-                    {
-                        Reference = new Microsoft.OpenApi.Models.OpenApiReference
-                        {
-                            Type = Microsoft.OpenApi.Models.ReferenceType.Schema,
-                            Id = "ReadRequestDto"
-                        }
-                    }
-                }
-            }
-        };
-        operation.Security = new List<Microsoft.OpenApi.Models.OpenApiSecurityRequirement>
-        {
-            new()
-            {
-                [new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-                {
-                    Reference = new Microsoft.OpenApi.Models.OpenApiReference
-                    {
-                        Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                        Id = "ApiKey"
-                    }
-                }] = new List<string>()
-            }
-        };
-        return operation;
-    });
+    .AddOpenApiDefaults("Read Data from Google Sheets based on request body.", "ReadRequestDto");
+
 
 app.MapPut("api/update", async (GoogleServices googleServices, [FromBody] WriteRequestDto dto) =>
     {
@@ -309,57 +164,8 @@ app.MapPut("api/update", async (GoogleServices googleServices, [FromBody] WriteR
         return Results.Ok(response.UpdatedRange);
     }).WithName("UpdateData")
     .WithTags("Google Sheets")
-    .WithOpenApi(operation =>
-    {
-        operation.Responses.TryAdd("200", new Microsoft.OpenApi.Models.OpenApiResponse
-        {
-            Description = "Successful Operation"
-        });
-        operation.Responses.TryAdd("401", new Microsoft.OpenApi.Models.OpenApiResponse
-        {
-            Description = "Unauthorized"
-        });
-        operation.Responses.TryAdd("500", new Microsoft.OpenApi.Models.OpenApiResponse
-        {
-            Description = "Internal Server Error"
-        });
+    .AddOpenApiDefaults("Update Data in Google Sheets based on request body.", "WriteRequestDto");
 
-        operation.Description = "Update Data in Google Sheets based on request body.";
-        operation.Summary = "Update Data in Google Sheets based on request body.";
-        operation.RequestBody = new Microsoft.OpenApi.Models.OpenApiRequestBody
-        {
-            Required = true,
-            Content =
-            {
-                ["application/json"] = new Microsoft.OpenApi.Models.OpenApiMediaType
-                {
-                    Schema = new Microsoft.OpenApi.Models.OpenApiSchema
-                    {
-                        Reference = new Microsoft.OpenApi.Models.OpenApiReference
-                        {
-                            Type = Microsoft.OpenApi.Models.ReferenceType.Schema,
-                            Id = "WriteRequestDto"
-                        }
-                    }
-                }
-            }
-        };
-        operation.Security = new List<Microsoft.OpenApi.Models.OpenApiSecurityRequirement>
-        {
-            new()
-            {
-                [new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-                {
-                    Reference = new Microsoft.OpenApi.Models.OpenApiReference
-                    {
-                        Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                        Id = "ApiKey"
-                    }
-                }] = new List<string>()
-            }
-        };
-        return operation;
-    });
 
 app.MapDelete("api/delete", async (GoogleServices googleServices, [FromBody] WriteRequestDto dto) =>
     {
@@ -370,56 +176,8 @@ app.MapDelete("api/delete", async (GoogleServices googleServices, [FromBody] Wri
         return Results.Ok(response.ClearedRange);
     }).WithName("DeleteData")
     .WithTags("Google Sheets")
-    .WithOpenApi(operation =>
-    {
-        operation.Responses.TryAdd("200", new Microsoft.OpenApi.Models.OpenApiResponse
-        {
-            Description = "Successful Operation"
-        });
-        operation.Responses.TryAdd("401", new Microsoft.OpenApi.Models.OpenApiResponse
-        {
-            Description = "Unauthorized"
-        });
-        operation.Responses.TryAdd("500", new Microsoft.OpenApi.Models.OpenApiResponse
-        {
-            Description = "Internal Server Error"
-        });
-        operation.Description = "Delete Data in Google Sheets based on request body.";
-        operation.Summary = "Delete Data in Google Sheets based on request body.";
-        operation.RequestBody = new Microsoft.OpenApi.Models.OpenApiRequestBody
-        {
-            Required = true,
-            Content =
-            {
-                ["application/json"] = new Microsoft.OpenApi.Models.OpenApiMediaType
-                {
-                    Schema = new Microsoft.OpenApi.Models.OpenApiSchema
-                    {
-                        Reference = new Microsoft.OpenApi.Models.OpenApiReference
-                        {
-                            Type = Microsoft.OpenApi.Models.ReferenceType.Schema,
-                            Id = "WriteRequestDto"
-                        }
-                    }
-                }
-            }
-        };
-        operation.Security = new List<Microsoft.OpenApi.Models.OpenApiSecurityRequirement>
-        {
-            new()
-            {
-                [new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-                {
-                    Reference = new Microsoft.OpenApi.Models.OpenApiReference
-                    {
-                        Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                        Id = "ApiKey"
-                    }
-                }] = new List<string>()
-            }
-        };
-        return operation;
-    });
+    .AddOpenApiDefaults("Delete Data in Google Sheets based on request body.", "WriteRequestDto");
+
 
 app.MapPatch("api/patch", async (GoogleServices googleServices, [FromBody] WriteRequestDto dto) =>
     {
@@ -434,56 +192,7 @@ app.MapPatch("api/patch", async (GoogleServices googleServices, [FromBody] Write
         return Results.Ok(response.Updates.UpdatedRange);
     }).WithName("PatchData")
     .WithTags("Google Sheets")
-    .WithOpenApi(operation =>
-    {
-        operation.Responses.TryAdd("200", new Microsoft.OpenApi.Models.OpenApiResponse
-        {
-            Description = "Successful Operation"
-        });
-        operation.Responses.TryAdd("401", new Microsoft.OpenApi.Models.OpenApiResponse
-        {
-            Description = "Unauthorized"
-        });
-        operation.Responses.TryAdd("500", new Microsoft.OpenApi.Models.OpenApiResponse
-        {
-            Description = "Internal Server Error"
-        });
-        operation.Description = "Patch Data in Google Sheets based on request body.";
-        operation.Summary = "Patch Data in Google Sheets based on request body.";
-        operation.RequestBody = new Microsoft.OpenApi.Models.OpenApiRequestBody
-        {
-            Required = true,
-            Content =
-            {
-                ["application/json"] = new Microsoft.OpenApi.Models.OpenApiMediaType
-                {
-                    Schema = new Microsoft.OpenApi.Models.OpenApiSchema
-                    {
-                        Reference = new Microsoft.OpenApi.Models.OpenApiReference
-                        {
-                            Type = Microsoft.OpenApi.Models.ReferenceType.Schema,
-                            Id = "WriteRequestDto"
-                        }
-                    }
-                }
-            }
-        };
-        operation.Security = new List<Microsoft.OpenApi.Models.OpenApiSecurityRequirement>
-        {
-            new()
-            {
-                [new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-                {
-                    Reference = new Microsoft.OpenApi.Models.OpenApiReference
-                    {
-                        Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                        Id = "ApiKey"
-                    }
-                }] = new List<string>()
-            }
-        };
-        return operation;
-    });
+    .AddOpenApiDefaults("Patch Data in Google Sheets based on request body.", "WriteRequestDto");
 
 
 app.Run();
