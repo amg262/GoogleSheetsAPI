@@ -97,12 +97,12 @@
 							}
 						},
 						"url": {
-							"raw": "https://localhost:8001/api/read",
-							"protocol": "https",
+							"raw": "http://localhost:8000/api/read",
+							"protocol": "http",
 							"host": [
 								"localhost"
 							],
-							"port": "8001",
+							"port": "8000",
 							"path": [
 								"api",
 								"read"
@@ -230,8 +230,8 @@
 					}
 				},
 				"url": {
-					"raw": "http://localhost:8001/api/write",
-					"protocol": "http",
+					"raw": "https://localhost:8001/api/write",
+					"protocol": "https",
 					"host": [
 						"localhost"
 					],
@@ -274,7 +274,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n\t\"sheetname\": \"Sheet2\",\r\n\t\"range\": \"A1:Z14\"\r\n}",
+					"raw": "{\r\n\t\"sheetname\": \"Sheet2\",\r\n\t\"range\": \"A1:Z100\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -282,7 +282,7 @@
 					}
 				},
 				"url": {
-					"raw": "https://localhost:8001/api/read",
+					"raw": "https://localhost:8001/api/sheets/read",
 					"protocol": "https",
 					"host": [
 						"localhost"
@@ -290,7 +290,58 @@
 					"port": "8001",
 					"path": [
 						"api",
+						"sheets",
 						"read"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Docs Create",
+			"request": {
+				"auth": {
+					"type": "apikey",
+					"apikey": [
+						{
+							"key": "value",
+							"value": "cJTUF8BhrNw7p1FnTAGMnFLSKhi0zqZeYuRlR4zwzqZ35peWyMU6jMB2Bo5p4J/Yfvnx7HkRsveTJZ+NcXVSaQ==",
+							"type": "string"
+						},
+						{
+							"key": "key",
+							"value": "x-api-key",
+							"type": "string"
+						},
+						{
+							"key": "in",
+							"value": "header",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"spreadsheetId\": \"1IETU7EI1UKkVGgaCcoz0R0cnX5tdme-6ealsXvtXR1k\",\r\n  \"sheetname\": \"Sheet1\",\r\n  \"range\": \"A12\",\r\n  \"values\": [ \r\n\t\"afsdfsdfsffs\", \r\n\t\"bahh bahh\", \r\n\t\"Oh\", \r\n\t\"again\", \r\n\t\"oh hello there\", \r\n\t\"yo\", \r\n\t\"123\",\r\n\ttrue,\r\n\tfalse,\r\n\tnull,\r\n\t12.3434, \r\n\t341.23,\r\n\t\"2024-05-16T00:00:00Z\"\r\n\t]\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://localhost:8001/api/docs/create",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "8001",
+					"path": [
+						"api",
+						"docs",
+						"create"
 					]
 				}
 			},
@@ -322,8 +373,8 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://localhost:8001/api/health/live",
-					"protocol": "http",
+					"raw": "https://localhost:8001/api/health/live",
+					"protocol": "https",
 					"host": [
 						"localhost"
 					],
@@ -363,8 +414,8 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://localhost:8001/api/health/ready",
-					"protocol": "http",
+					"raw": "https://localhost:8001/api/health/ready",
+					"protocol": "https",
 					"host": [
 						"localhost"
 					],
@@ -373,6 +424,212 @@
 						"api",
 						"health",
 						"ready"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Docs Read",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "apikey",
+					"apikey": [
+						{
+							"key": "value",
+							"value": "cJTUF8BhrNw7p1FnTAGMnFLSKhi0zqZeYuRlR4zwzqZ35peWyMU6jMB2Bo5p4J/Yfvnx7HkRsveTJZ+NcXVSaQ==",
+							"type": "string"
+						},
+						{
+							"key": "key",
+							"value": "x-api-key",
+							"type": "string"
+						},
+						{
+							"key": "in",
+							"value": "header",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://localhost:8001/api/docs/read",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "8001",
+					"path": [
+						"api",
+						"docs",
+						"read"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Docs Delete",
+			"request": {
+				"auth": {
+					"type": "apikey",
+					"apikey": [
+						{
+							"key": "value",
+							"value": "cJTUF8BhrNw7p1FnTAGMnFLSKhi0zqZeYuRlR4zwzqZ35peWyMU6jMB2Bo5p4J/Yfvnx7HkRsveTJZ+NcXVSaQ==",
+							"type": "string"
+						},
+						{
+							"key": "key",
+							"value": "x-api-key",
+							"type": "string"
+						},
+						{
+							"key": "in",
+							"value": "header",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://localhost:8001/api/docs/read/1VHFTsfc5hjwxX5JIzL96GbUR1ibfkegAQS8-fH1Onag",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "8001",
+					"path": [
+						"api",
+						"docs",
+						"read",
+						"1VHFTsfc5hjwxX5JIzL96GbUR1ibfkegAQS8-fH1Onag"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Append Text",
+			"request": {
+				"auth": {
+					"type": "apikey",
+					"apikey": [
+						{
+							"key": "value",
+							"value": "cJTUF8BhrNw7p1FnTAGMnFLSKhi0zqZeYuRlR4zwzqZ35peWyMU6jMB2Bo5p4J/Yfvnx7HkRsveTJZ+NcXVSaQ==",
+							"type": "string"
+						},
+						{
+							"key": "key",
+							"value": "x-api-key",
+							"type": "string"
+						},
+						{
+							"key": "in",
+							"value": "header",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n\t\"text\": \"this is the text I wanted to replace\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://localhost:8001/api/docs/append/1VHFTsfc5hjwxX5JIzL96GbUR1ibfkegAQS8-fH1Onag",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "8001",
+					"path": [
+						"api",
+						"docs",
+						"append",
+						"1VHFTsfc5hjwxX5JIzL96GbUR1ibfkegAQS8-fH1Onag"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update Text",
+			"request": {
+				"auth": {
+					"type": "apikey",
+					"apikey": [
+						{
+							"key": "value",
+							"value": "cJTUF8BhrNw7p1FnTAGMnFLSKhi0zqZeYuRlR4zwzqZ35peWyMU6jMB2Bo5p4J/Yfvnx7HkRsveTJZ+NcXVSaQ==",
+							"type": "string"
+						},
+						{
+							"key": "key",
+							"value": "x-api-key",
+							"type": "string"
+						},
+						{
+							"key": "in",
+							"value": "header",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n\t\"startIndex\": 1,\r\n\t\"endIndex\": 1000,\r\n\t\"text\": \"hey how are we doing over here what is going on my guy it is somethigns oisndosijfois jf\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://localhost:8001/api/docs/update/1VHFTsfc5hjwxX5JIzL96GbUR1ibfkegAQS8-fH1Onag",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "8001",
+					"path": [
+						"api",
+						"docs",
+						"update",
+						"1VHFTsfc5hjwxX5JIzL96GbUR1ibfkegAQS8-fH1Onag"
 					]
 				}
 			},
