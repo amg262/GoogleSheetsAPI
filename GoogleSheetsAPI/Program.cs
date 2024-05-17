@@ -2,6 +2,7 @@ using System.Net.Mime;
 using System.Text.Json;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Docs.v1;
+using Google.Apis.Docs.v1.Data;
 using Google.Apis.Drive.v3;
 using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
@@ -153,5 +154,64 @@ app.MapPatch("api/patch", async (GoogleServices googleServices, [FromBody] Write
     .WithTags("Google Sheets")
     .AddOpenApiDefaults("Patch Data in Google Sheets based on request body.", "WriteRequestDto");
 
+app.MapPost("api/docs/create", async (GoogleServices googleServices) =>
+    {
+        var doc = new Document { Title = "New Document" };
+        var request = googleServices.DocsService.Documents.Create(doc);
+        var result = await request.ExecuteAsync();
+        return Results.Ok(new { DocumentId = result.DocumentId });
+    }).WithName("CreateDocument")
+    .WithTags("Google Docs")
+    .AddOpenApiDefaults("Create a new Google Doc.", "none");
 
+app.MapGet("api/docs/read/{documentId}", async (GoogleServices googleServices, string? documentId) =>
+    {
+        var id = "1JDtuXj5OuCg3kaxayfed0b2IuN4b2UYBu459_lvUpko";
+        // var request = googleServices.DocsService.Documents.Get(id);
+        var request = googleServices.DocsService.Documents.Get(documentId);
+        var document = await request.ExecuteAsync();
+        return Results.Ok(document.Body.Content);
+    }).WithName("ReadDocument")
+    .WithTags("Google Docs")
+    .AddOpenApiDefaults("Read content from a Google Doc.", "none");
+
+app.MapPut("api/docs/update/{documentId}",
+        async (GoogleServices googleServices, string documentId, [FromBody] List<Request> requests) =>
+        {
+            var batchUpdateDocumentRequest = new BatchUpdateDocumentRequest { Requests = requests };
+            var request = googleServices.DocsService.Documents.BatchUpdate(batchUpdateDocumentRequest, documentId);
+            var response = await request.ExecuteAsync();
+            return Results.Ok(response);
+        }).WithName("UpdateDocument")
+    .WithTags("Google Docs")
+    .AddOpenApiDefaults("Update a Google Doc based on request body.", "List<Request>");
+
+
+app.MapDelete("api/docs/delete/{documentId}", async (GoogleServices googleServices, string documentId) =>
+    {
+        // Here we clear the document by replacing the content with an empty string
+        var requests = new List<Request>
+        {
+            new()
+            {
+                ReplaceAllText = new ReplaceAllTextRequest
+                {
+                    ContainsText = new SubstringMatchCriteria
+                    {
+                        Text = "",
+                        MatchCase = true
+                    },
+                    ReplaceText = ""
+                }
+            }
+        };
+        var batchRequest = new BatchUpdateDocumentRequest { Requests = requests };
+        var request = googleServices.DocsService.Documents.BatchUpdate(batchRequest, documentId);
+        var result = await request.ExecuteAsync();
+        var replies = result.Replies;
+        Console.WriteLine(JsonSerializer.Serialize(replies));
+        return Results.Ok(new { Result = "Document content cleared." });
+    }).WithName("DeleteDocumentContent")
+    .WithTags("Google Docs")
+    .AddOpenApiDefaults("Delete (clear) content in a Google Doc.", "none");
 app.Run();
