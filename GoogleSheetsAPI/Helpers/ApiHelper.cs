@@ -1,5 +1,7 @@
-﻿using System.Security.Cryptography;
+﻿using System.Globalization;
+using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace GoogleSheetsAPI.Helpers;
 
@@ -21,32 +23,40 @@ public static class ApiHelper
     /// It handles various JSON value kinds such as Number, String, True, False, Null, Undefined, Object, and Array.
     /// If the conversion fails, it catches the exception and returns the exception message.
     /// </remarks>
-    public static object? GetObjectValue(object obj)
+    public static object? GetObjectValue(object? obj)
     {
         try
         {
-            if (obj == null) return "NULL";
-
-            var jsonElement = (JsonElement)obj;
-            var rawText = jsonElement.GetRawText();
-            var typeOfObject = ((JsonElement)obj).ValueKind;
-
-            return typeOfObject switch
+            switch (obj)
             {
-                JsonValueKind.Number => float.Parse(rawText), // return long.Parse(obj.ToString());
-                JsonValueKind.String => rawText.ToString(),
-                JsonValueKind.True => true,
-                JsonValueKind.False => false,
-                JsonValueKind.Null => null,
-                JsonValueKind.Undefined => null,
-                JsonValueKind.Object => rawText.ToString(),
-                JsonValueKind.Array => rawText.ToString(),
-                _ => rawText.ToString()
-            };
+                case null:
+                    return "NULL";
+                case JsonElement jsonElement:
+                {
+                    var typeOfObject = jsonElement.ValueKind;
+                    var rawText = jsonElement.GetRawText(); // Retrieves the raw JSON text.
+
+                    return typeOfObject switch
+                    {
+                        JsonValueKind.Number => float.Parse(rawText, CultureInfo.InvariantCulture),
+                        JsonValueKind.String => obj.ToString(), // Directly gets the string.
+                        JsonValueKind.True => true, // Boolean true.
+                        JsonValueKind.False => false, // Boolean false.
+                        JsonValueKind.Null => null, // Null.
+                        JsonValueKind.Undefined => null, // Undefined treated as null.
+                        JsonValueKind.Object => rawText, // Returns raw JSON for objects.
+                        JsonValueKind.Array => rawText, // Returns raw JSON for arrays.
+                        _ => rawText// Fallback to raw text for any other kind.
+                    };
+                }
+                default:
+                    throw new ArgumentException("Expected a JsonElement object", nameof(obj));
+            }
         }
         catch (Exception ex)
         {
-            return ex.Message;
+            // Returns the exception message in case of failure.
+            return $"Error: {ex.Message}";
         }
     }
 
