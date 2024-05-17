@@ -25,7 +25,7 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
 
 builder.Services.AddSingleton(s =>
 {
-    const string json = "ellsworth.json";
+    const string json = "e.json";
     var env = s.GetRequiredService<IWebHostEnvironment>();
     var path = Path.Combine(env.WebRootPath, json);
     var sheetCredential = GoogleCredential.FromFile(path).CreateScoped(SheetsService.Scope.Spreadsheets);
@@ -373,5 +373,4 @@ static string DoIt() => new PasswordGenerator().Generate(64, 10, 10);
 
 public partial class Program
 {
-    
 }
