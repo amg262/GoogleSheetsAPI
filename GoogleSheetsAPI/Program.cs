@@ -11,9 +11,9 @@ using GoogleSheetsAPI.DTOs;
 using GoogleSheetsAPI.Helpers;
 using GoogleSheetsAPI.Middleware;
 using GoogleSheetsAPI.Models;
-using GoogleSheetsAPI.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Range = Google.Apis.Docs.v1.Data.Range;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -83,7 +83,7 @@ app.UseCors("Local");
 app.MapHealthCheckEndpoints();
 
 // Define endpoints here.
-app.MapPost("api/write", async (GoogleServices googleServices, [FromBody] WriteRequestDto dto) =>
+app.MapPost("api/sheets/write", async (GoogleServices googleServices, [FromBody] WriteRequestDto dto) =>
     {
         var fullRange = $"{dto.Sheetname ?? "Sheet1"}!{dto.Range ?? "A1"}";
         var objList = dto.Values.Select(ApiHelper.GetObjectValue).ToList();
@@ -99,7 +99,7 @@ app.MapPost("api/write", async (GoogleServices googleServices, [FromBody] WriteR
     .AddOpenApiDefaults("Write Data to Google Sheets based on request body.", "WriteRequestDto");
 
 
-app.MapGet("api/read", async (GoogleServices googleServices, [FromBody] ReadRequestDto dto) =>
+app.MapGet("api/sheets/read", async (GoogleServices googleServices, [FromBody] ReadRequestDto dto) =>
     {
         var fullRange = $"{dto.Sheetname ?? "Sheet1"}!{dto.Range ?? "A1:Z15"}";
         var request = googleServices.SheetsService.Spreadsheets.Values.Get(dto.SpreadsheetId, fullRange);
@@ -111,7 +111,7 @@ app.MapGet("api/read", async (GoogleServices googleServices, [FromBody] ReadRequ
     .AddOpenApiDefaults("Read Data from Google Sheets based on request body.", "ReadRequestDto");
 
 
-app.MapPut("api/update", async (GoogleServices googleServices, [FromBody] WriteRequestDto dto) =>
+app.MapPut("api/sheets/update", async (GoogleServices googleServices, [FromBody] WriteRequestDto dto) =>
     {
         var fullRange = $"{dto.Sheetname ?? "Sheet1"}!{dto.Range ?? "A1:Z1"}";
         var objList = dto.Values.Select(ApiHelper.GetObjectValue).ToList();
@@ -127,7 +127,7 @@ app.MapPut("api/update", async (GoogleServices googleServices, [FromBody] WriteR
     .AddOpenApiDefaults("Update Data in Google Sheets based on request body.", "WriteRequestDto");
 
 
-app.MapDelete("api/delete", async (GoogleServices googleServices, [FromBody] WriteRequestDto dto) =>
+app.MapDelete("api/sheets/delete", async (GoogleServices googleServices, [FromBody] WriteRequestDto dto) =>
     {
         var fullRange = $"{dto.Sheetname ?? "Sheet1"}!{dto.Range ?? "A1:Z1"}";
         var request = googleServices.SheetsService.Spreadsheets.Values.Clear(null, dto.SpreadsheetId, fullRange);
@@ -139,7 +139,7 @@ app.MapDelete("api/delete", async (GoogleServices googleServices, [FromBody] Wri
     .AddOpenApiDefaults("Delete Data in Google Sheets based on request body.", "WriteRequestDto");
 
 
-app.MapPatch("api/patch", async (GoogleServices googleServices, [FromBody] WriteRequestDto dto) =>
+app.MapPatch("api/sheets/patch", async (GoogleServices googleServices, [FromBody] WriteRequestDto dto) =>
     {
         var fullRange = $"{dto.Sheetname ?? "Sheet1"}!{dto.Range ?? "A1:Z1"}";
         var objList = dto.Values.Select(ApiHelper.GetObjectValue).ToList();
@@ -214,4 +214,109 @@ app.MapDelete("api/docs/delete/{documentId}", async (GoogleServices googleServic
     }).WithName("DeleteDocumentContent")
     .WithTags("Google Docs")
     .AddOpenApiDefaults("Delete (clear) content in a Google Doc.", "none");
+
+app.MapPost("api/docs/append/{documentId}",
+        async (GoogleServices googleServices, string documentId, [FromBody] AppendTextRequest appendTextRequest) =>
+        {
+            if (string.IsNullOrEmpty(appendTextRequest.Text))
+            {
+                return Results.BadRequest("Text to append must not be empty.");
+            }
+
+            // First, get the document to find the correct index for appending text
+            var getDocRequest = googleServices.DocsService.Documents.Get(documentId);
+            var doc = await getDocRequest.ExecuteAsync();
+            var contentLength = doc.Body.Content.LastOrDefault()?.EndIndex ?? 1; // Safe default if document is empty
+
+
+            // Create a request to append text to the end of the document.
+            var requests = new List<Request>
+            {
+                new()
+                {
+                    InsertText = new InsertTextRequest
+                    {
+                        Location = new Location
+                        {
+                            // Assuming you want to append text at the end of the document.
+                            // To insert text elsewhere, you would need to specify a different index.
+                            Index = contentLength - 1 // Append at the end of the document
+                        },
+                        Text = appendTextRequest.Text
+                    }
+                }
+            };
+
+            var batchUpdateRequest = new BatchUpdateDocumentRequest { Requests = requests };
+            var request = googleServices.DocsService.Documents.BatchUpdate(batchUpdateRequest, documentId);
+            try
+            {
+                var response = await request.ExecuteAsync();
+                return Results.Ok(new
+                    { Message = "Text appended successfully.", DocumentId = documentId, Changes = response.Replies });
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem("Failed to append text: " + ex.Message);
+            }
+        }).WithName("AppendTextToDocument")
+    .WithTags("Google Docs")
+    .AddOpenApiDefaults("Append text to a Google Doc based on document ID and request body.", "AppendTextRequest");
+
+app.MapPatch("api/docs/update/{documentId}",
+        async (GoogleServices googleServices, string documentId, [FromBody] UpdateTextRequest updateRequest) =>
+        {
+            if (string.IsNullOrEmpty(updateRequest.Text))
+            {
+                return Results.BadRequest("Text to update must not be empty.");
+            }
+
+            // Create the requests to replace text in the specified range.
+            var requests = new List<Request>
+            {
+                new()
+                {
+                    DeleteContentRange = new DeleteContentRangeRequest
+                    {
+                        Range = new Range()
+                        {
+                            StartIndex = updateRequest.StartIndex,
+                            EndIndex = updateRequest.EndIndex
+                        }
+                    }
+                },
+                new()
+                {
+                    InsertText = new InsertTextRequest
+                    {
+                        Location = new Location
+                        {
+                            Index = updateRequest.StartIndex
+                        },
+                        Text = updateRequest.Text
+                    }
+                }
+            };
+
+            var batchUpdateRequest = new BatchUpdateDocumentRequest { Requests = requests };
+            var request = googleServices.DocsService.Documents.BatchUpdate(batchUpdateRequest, documentId);
+            try
+            {
+                var response = await request.ExecuteAsync();
+                return Results.Ok(new
+                {
+                    Message = "Text updated successfully.",
+                    DocumentId = documentId,
+                    Changes = response.Replies
+                });
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem("Failed to update text: " + ex.Message);
+            }
+        }).WithName("UpdateTextInDocument")
+    .WithTags("Google Docs")
+    .AddOpenApiDefaults("Update text in a Google Doc based on document ID and request body.", "UpdateTextRequest");
+
+
 app.Run();

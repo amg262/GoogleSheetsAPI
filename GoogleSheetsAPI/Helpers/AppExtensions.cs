@@ -3,7 +3,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.OpenApi.Models;
 
-namespace GoogleSheetsAPI.Extensions;
+namespace GoogleSheetsAPI.Helpers;
 
 /// <summary>
 /// Provides extension methods to enhance the application with Swagger and health checks.
