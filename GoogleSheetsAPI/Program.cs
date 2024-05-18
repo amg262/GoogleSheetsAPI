@@ -111,6 +111,18 @@ app.MapGet("api/sheets/read", async (GoogleServices googleServices, [FromBody] R
     .WithTags("Google Sheets")
     .AddOpenApiDefaults("Read Data from Google Sheets based on request body.", "ReadRequestDto");
 
+app.MapGet("api/sheets/read/{speadsheetId}", async (string speadsheetId, GoogleServices googleServices, [FromBody] ReadRequestDto dto) =>
+    {
+        var fullRange = $"{dto.Sheetname ?? "Sheet1"}!{dto.Range ?? "A1:Z15"}";
+        var request = googleServices.SheetsService.Spreadsheets.Values.Get(speadsheetId, fullRange);
+        // var request = googleServices.SheetsService.Spreadsheets.Values.Get(dto.SpreadsheetId, fullRange);
+
+        var response = await request.ExecuteAsync();
+        return Results.Ok(response.Values);
+    }).WithName("ReadSpreadsheetData")
+    .WithTags("Google Sheets")
+    .AddOpenApiDefaults("Read Data from Google Sheets based on request body.", "ReadRequestDto");
+
 
 app.MapPut("api/sheets/update", async (GoogleServices googleServices, [FromBody] WriteRequestDto dto) =>
     {
