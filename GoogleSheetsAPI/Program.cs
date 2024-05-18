@@ -1,5 +1,7 @@
 using System.Net.Mime;
 using System.Text.Json;
+using Google.Apis.AnalyticsReporting.v4;
+using Google.Apis.AnalyticsReporting.v4.Data;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Docs.v1;
 using Google.Apis.Docs.v1.Data;
@@ -13,6 +15,7 @@ using GoogleSheetsAPI.Middleware;
 using GoogleSheetsAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Dimension = Google.Apis.Docs.v1.Data.Dimension;
 using Range = Google.Apis.Docs.v1.Data.Range;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -31,6 +34,8 @@ builder.Services.AddSingleton(s =>
     var sheetCredential = GoogleCredential.FromFile(path).CreateScoped(SheetsService.Scope.Spreadsheets);
     var docCredential = GoogleCredential.FromFile(path).CreateScoped(DocsService.Scope.Documents);
     var driveCredential = GoogleCredential.FromFile(path).CreateScoped(DriveService.Scope.Drive);
+    var analyticsCredential =
+        GoogleCredential.FromFile(path).CreateScoped(AnalyticsReportingService.Scope.AnalyticsReadonly);
 
     var sheetsService = new SheetsService(new BaseClientService.Initializer()
     {
@@ -50,7 +55,15 @@ builder.Services.AddSingleton(s =>
         ApplicationName = "Google Drive Minimal API",
     });
 
-    return new GoogleServices(sheetsService, docsService, driveService);
+    var analyticsService = new AnalyticsReportingService(new BaseClientService.Initializer()
+    {
+        HttpClientInitializer = analyticsCredential,
+        ApplicationName = "Google Analytics API",
+    });
+
+    // Todo: Create service for Google Analytics
+
+    return new GoogleServices(sheetsService, docsService, driveService, analyticsService);
 });
 
 
@@ -111,15 +124,16 @@ app.MapGet("api/sheets/read", async (GoogleServices googleServices, [FromBody] R
     .WithTags("Google Sheets")
     .AddOpenApiDefaults("Read Data from Google Sheets based on request body.", "ReadRequestDto");
 
-app.MapGet("api/sheets/read/{speadsheetId}", async (string speadsheetId, GoogleServices googleServices, [FromBody] ReadRequestDto dto) =>
-    {
-        var fullRange = $"{dto.Sheetname ?? "Sheet1"}!{dto.Range ?? "A1:Z15"}";
-        var request = googleServices.SheetsService.Spreadsheets.Values.Get(speadsheetId, fullRange);
-        // var request = googleServices.SheetsService.Spreadsheets.Values.Get(dto.SpreadsheetId, fullRange);
+app.MapGet("api/sheets/read/{speadsheetId}",
+        async (string speadsheetId, GoogleServices googleServices, [FromBody] ReadRequestDto dto) =>
+        {
+            var fullRange = $"{dto.Sheetname ?? "Sheet1"}!{dto.Range ?? "A1:Z15"}";
+            var request = googleServices.SheetsService.Spreadsheets.Values.Get(speadsheetId, fullRange);
+            // var request = googleServices.SheetsService.Spreadsheets.Values.Get(dto.SpreadsheetId, fullRange);
 
-        var response = await request.ExecuteAsync();
-        return Results.Ok(response.Values);
-    }).WithName("ReadSpreadsheetData")
+            var response = await request.ExecuteAsync();
+            return Results.Ok(response.Values);
+        }).WithName("ReadSpreadsheetData")
     .WithTags("Google Sheets")
     .AddOpenApiDefaults("Read Data from Google Sheets based on request body.", "ReadRequestDto");
 
@@ -377,7 +391,58 @@ app.MapDelete("api/docs/delete/{documentId}",
     .WithTags("Google Docs")
     .AddOpenApiDefaults("Delete text in a Google Doc based on document ID and request body.", "DeleteTextRequestDto");
 
+
+app.MapPost("api/drive/create", async (GoogleServices googleServices, [FromBody] CreateDriveFileRequestDto dto) =>
+    {
+        var file = new Google.Apis.Drive.v3.Data.File
+        {
+            Name = dto.Name,
+            MimeType = dto.MimeType,
+            Parents = new List<string> { dto.ParentId }
+        };
+
+        var request = googleServices.DriveService.Files.Create(file);
+        var result = await request.ExecuteAsync();
+        return Results.Ok(new { FileId = result.Id });
+    }).WithName("CreateDriveFile")
+    .WithTags("Google Analytics")
+    .AddOpenApiDefaults("Fetch analytics data based on metrics, dimensions, and date range.", "AnalyticsRequestDto");
 // Console.WriteLine(DoIt());
+
+
+// this isnt gonna work
+app.MapPost("api/analytics/report", async (GoogleServices googleServices, [FromBody] AnalyticsRequestDto requestDto) =>
+    {
+        var dateRange = new DateRange { StartDate = requestDto.StartDate, EndDate = requestDto.EndDate };
+        var metric = new Metric { Expression = requestDto.MetricExpression };
+        // var dimension = new Dimension { requestDto.DimensionName };
+
+        var reportRequest = new ReportRequest
+        {
+            DateRanges = new List<DateRange> { dateRange },
+            // Dimensions = new List<Dimension> { dimension },
+            Metrics = new List<Metric> { metric },
+            ViewId = requestDto.ViewId
+        };
+
+        var getReportsRequest = new GetReportsRequest
+        {
+            ReportRequests = new List<ReportRequest> { reportRequest }
+        };
+
+        try
+        {
+            var response = await googleServices.ReportingService.Reports.BatchGet(getReportsRequest).ExecuteAsync();
+            return Results.Ok(response.Reports.First());
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem("Failed to fetch analytics data: " + ex.Message);
+        }
+    }).WithName("FetchAnalyticsReport")
+    .WithTags("Google Analytics")
+    .AddOpenApiDefaults("Fetch analytics data based on metrics, dimensions, and date range.", "AnalyticsRequestDto");
+
 app.Run();
 return;
 
