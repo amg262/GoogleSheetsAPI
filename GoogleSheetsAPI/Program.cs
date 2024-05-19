@@ -1,5 +1,3 @@
-using System.Net.Mime;
-using System.Text.Json;
 using Google.Apis.AnalyticsReporting.v4;
 using Google.Apis.AnalyticsReporting.v4.Data;
 using Google.Apis.Auth.OAuth2;
@@ -15,7 +13,9 @@ using GoogleSheetsAPI.Middleware;
 using GoogleSheetsAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Dimension = Google.Apis.Docs.v1.Data.Dimension;
+using Dimension = Google.Apis.AnalyticsReporting.v4.Data.Dimension;
+
+// using Dimension = Google.Apis.Docs.v1.Data.Dimension;
 using Range = Google.Apis.Docs.v1.Data.Range;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -405,7 +405,7 @@ app.MapPost("api/drive/create", async (GoogleServices googleServices, [FromBody]
         var result = await request.ExecuteAsync();
         return Results.Ok(new { FileId = result.Id });
     }).WithName("CreateDriveFile")
-    .WithTags("Google Analytics")
+    .WithTags("Google Drive")
     .AddOpenApiDefaults("Fetch analytics data based on metrics, dimensions, and date range.", "AnalyticsRequestDto");
 // Console.WriteLine(DoIt());
 
@@ -415,12 +415,13 @@ app.MapPost("api/analytics/report", async (GoogleServices googleServices, [FromB
     {
         var dateRange = new DateRange { StartDate = requestDto.StartDate, EndDate = requestDto.EndDate };
         var metric = new Metric { Expression = requestDto.MetricExpression };
-        // var dimension = new Dimension { requestDto.DimensionName };
+        var dimension = new Dimension { Name = requestDto.DimensionName };
+        
 
         var reportRequest = new ReportRequest
         {
             DateRanges = new List<DateRange> { dateRange },
-            // Dimensions = new List<Dimension> { dimension },
+            Dimensions = new List<Dimension> { dimension },
             Metrics = new List<Metric> { metric },
             ViewId = requestDto.ViewId
         };
