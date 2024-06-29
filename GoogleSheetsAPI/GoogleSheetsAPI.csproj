@@ -8,6 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="Google.Apis" Version="1.68.0" />
         <PackageReference Include="Google.Apis.AnalyticsReporting.v4" Version="1.68.0.2484" />
         <PackageReference Include="Google.Apis.Auth" Version="1.68.0" />
         <PackageReference Include="Google.Apis.Docs.v1" Version="1.68.0.3193" />

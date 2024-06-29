@@ -42,29 +42,24 @@ public class PasswordGenerator
             throw new ArgumentException("Number of digits and symbols must be less than length.", nameof(length));
         }
 
-        if (!allowRepeatedCharacters && charactersInPassword > letters.Length)
+        switch (allowRepeatedCharacters)
         {
-            throw new ArgumentException(
-                "Number of characters requested exceeds available letters and repeats are not allowed", nameof(length));
+            case false when charactersInPassword > letters.Length:
+                throw new ArgumentException(
+                    "Number of characters requested exceeds available letters and repeats are not allowed", nameof(length));
+            case false when numberOfDigits > 0 && numberOfDigits > Digits.Length:
+                throw new ArgumentException(
+                    "Number of digits requested exceeds available digits and repeats are not allowed",
+                    nameof(numberOfDigits));
+            case false when numberOfSymbols > 0 && numberOfSymbols > Symbols.Length:
+                throw new ArgumentException(
+                    "Number of symbols requested exceeds available symbols and repeats are not allowed",
+                    nameof(numberOfSymbols));
         }
 
-        if (!allowRepeatedCharacters && numberOfDigits > 0 && numberOfDigits > Digits.Length)
-        {
-            throw new ArgumentException(
-                "Number of digits requested exceeds available digits and repeats are not allowed",
-                nameof(numberOfDigits));
-        }
+        var result = string.Empty;
 
-        if (!allowRepeatedCharacters && numberOfSymbols > 0 && numberOfSymbols > Symbols.Length)
-        {
-            throw new ArgumentException(
-                "Number of symbols requested exceeds available symbols and repeats are not allowed",
-                nameof(numberOfSymbols));
-        }
-
-        string result = string.Empty;
-
-        for (int i = 0; i < charactersInPassword; i++)
+        for (var i = 0; i < charactersInPassword; i++)
         {
             var character = GetRandomElement(letters);
 
@@ -78,7 +73,7 @@ public class PasswordGenerator
             }
         }
 
-        for (int i = 0; i < numberOfDigits; i++)
+        for (var i = 0; i < numberOfDigits; i++)
         {
             var digit = GetRandomElement(Digits);
 
@@ -92,7 +87,7 @@ public class PasswordGenerator
             }
         }
 
-        for (int i = 0; i < numberOfSymbols; i++)
+        for (var i = 0; i < numberOfSymbols; i++)
         {
             var symbol = GetRandomElement(Symbols);
 
@@ -154,7 +149,7 @@ public class PasswordGenerator
     /// <returns>A string containing <paramref name="characterToInsert"/> into <paramref name="input"/> at a random position.</returns>
     private static string InsertAtRandomPosition(string input, char characterToInsert)
     {
-        int position = input.Length == 0 ? 0 : RandomNumberGenerator.GetInt32(0, input.Length);
+        var position = input.Length == 0 ? 0 : RandomNumberGenerator.GetInt32(0, input.Length);
         return input.Insert(position, characterToInsert.ToString());
     }
 
@@ -165,7 +160,7 @@ public class PasswordGenerator
     /// <returns>A random character from <paramref name="input"/>.</returns>
     private static char GetRandomElement(string input)
     {
-        int position = RandomNumberGenerator.GetInt32(0, input.Length);
+        var position = RandomNumberGenerator.GetInt32(0, input.Length);
         return input[position];
     }
 }

@@ -1,3 +1,4 @@
+using Google;
 using Google.Apis.AnalyticsReporting.v4;
 using Google.Apis.AnalyticsReporting.v4.Data;
 using Google.Apis.Auth.OAuth2;
@@ -28,14 +29,15 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
 
 builder.Services.AddSingleton(s =>
 {
-    const string json = "e.json";
+    const string json = "j.json";
     var env = s.GetRequiredService<IWebHostEnvironment>();
     var path = Path.Combine(env.WebRootPath, json);
     var sheetCredential = GoogleCredential.FromFile(path).CreateScoped(SheetsService.Scope.Spreadsheets);
     var docCredential = GoogleCredential.FromFile(path).CreateScoped(DocsService.Scope.Documents);
     var driveCredential = GoogleCredential.FromFile(path).CreateScoped(DriveService.Scope.Drive);
     var analyticsCredential =
-        GoogleCredential.FromFile(path).CreateScoped(AnalyticsReportingService.Scope.AnalyticsReadonly);
+        GoogleCredential.FromFile(path).CreateScoped(AnalyticsReportingService.Scope.Analytics).UnderlyingCredential as
+            ServiceAccountCredential;
 
     var sheetsService = new SheetsService(new BaseClientService.Initializer()
     {
@@ -59,6 +61,7 @@ builder.Services.AddSingleton(s =>
     {
         HttpClientInitializer = analyticsCredential,
         ApplicationName = "Google Analytics API",
+        HttpClientFactory = new Google.Apis.Http.HttpClientFactory()
     });
 
     // Todo: Create service for Google Analytics
@@ -92,7 +95,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseMiddleware<ApiKeyMiddleware>();
+// app.UseMiddleware<ApiKeyMiddleware>();
 app.UseCors("Local");
 app.MapHealthCheckEndpoints();
 
@@ -416,7 +419,7 @@ app.MapPost("api/analytics/report", async (GoogleServices googleServices, [FromB
         var dateRange = new DateRange { StartDate = requestDto.StartDate, EndDate = requestDto.EndDate };
         var metric = new Metric { Expression = requestDto.MetricExpression };
         var dimension = new Dimension { Name = requestDto.DimensionName };
-        
+
 
         var reportRequest = new ReportRequest
         {
@@ -435,6 +438,11 @@ app.MapPost("api/analytics/report", async (GoogleServices googleServices, [FromB
         {
             var response = await googleServices.ReportingService.Reports.BatchGet(getReportsRequest).ExecuteAsync();
             return Results.Ok(response.Reports.First());
+        }
+        catch (GoogleApiException e)
+        {
+            // You can log e.HttpStatusCode or e.Error.Message to get more specific errors
+            return Results.Problem("Failed to fetch analytics data: " + e.Error.Message);
         }
         catch (Exception ex)
         {
